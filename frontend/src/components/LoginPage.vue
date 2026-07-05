@@ -19,7 +19,10 @@
 
     <main class="content">
       <!-- Telegram injects its own iframe button into this container -->
-      <div ref="telegramWidget" class="telegram-widget-container"></div>
+      <button class="telegram-login-btn" @click="startTelegramLogin">
+        <span class="material-symbols-outlined">send</span>
+        Login with Telegram
+      </button>
 
       <p v-if="loading" class="loading-text">Signing you in...</p>
       <p v-if="errorMessage" class="error-text">{{ errorMessage }}</p>
@@ -34,69 +37,37 @@
 </template>
 
 <script setup>
-import { onBeforeUnmount, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
-import api from '../lib/api'
-import { saveSession } from '../lib/auth'
+import { onMounted } from 'vue'
+import { generateCodeChallenge, generateRandomString } from '../lib/pkce'
 
-const router = useRouter()
-const telegramWidget = ref(null)
-const loading = ref(false)
-const errorMessage = ref('')
+const CLIENT_ID = import.meta.env.VITE_TELEGRAM_OIDC_CLIENT_ID
+const REDIRECT_URI = import.meta.env.VITE_TELEGRAM_OIDC_REDIRECT_URI
 
-const BOT_USERNAME = import.meta.env.VITE_TELEGRAM_BOT_USERNAME
+// Called when the person taps "Login with Telegram". Generates the PKCE
+// pair + anti-CSRF state, stashes the verifier+state in sessionStorage
+// (we need them again once Telegram redirects back), then navigates
+// away to Telegram's own authorization page.
+async function startTelegramLogin() {
+  const state = generateRandomString(32)
+  const codeVerifier = generateRandomString(64)
+  const codeChallenge = await generateCodeChallenge(codeVerifier)
 
-// Loads the official Telegram Login Widget script and configures it to
-// call window.onTelegramAuth(user) once the person authorizes.
-function loadTelegramWidgetScript() {
-  return new Promise((resolve, reject) => {
-    if (document.getElementById('telegram-login-script')) {
-      resolve()
-      return
-    }
-    const script = document.createElement('script')
-    script.id = 'telegram-login-script'
-    script.src = 'https://telegram.org/js/telegram-widget.js?22'
-    script.async = true
-    script.setAttribute('data-telegram-login', BOT_USERNAME)
-    script.setAttribute('data-size', 'large')
-    script.setAttribute('data-radius', '12')
-    script.setAttribute('data-onauth', 'onTelegramAuth(user)')
-    script.setAttribute('data-request-access', 'write')
-    script.onload = resolve
-    script.onerror = reject
-    telegramWidget.value.appendChild(script)
-  })
+  sessionStorage.setItem('tg_oidc_state', state)
+  sessionStorage.setItem('tg_oidc_verifier', codeVerifier)
+
+  const authUrl = new URL('https://oauth.telegram.org/auth')
+  authUrl.searchParams.set('client_id', CLIENT_ID)
+  authUrl.searchParams.set('redirect_uri', REDIRECT_URI)
+  authUrl.searchParams.set('response_type', 'code')
+  authUrl.searchParams.set('scope', 'openid profile phone')
+  authUrl.searchParams.set('state', state)
+  authUrl.searchParams.set('code_challenge', codeChallenge)
+  authUrl.searchParams.set('code_challenge_method', 'S256')
+
+  window.location.href = authUrl.toString()
 }
 
-// Callback invoked by Telegram's widget with the signed user object.
-// We forward it as-is to the backend, which re-verifies the HMAC hash —
-// the frontend never trusts this data on its own.
-async function handleTelegramAuth(user) {
-  loading.value = true
-  errorMessage.value = ''
-  try {
-    const { data } = await api.post('/auth/telegram-callback', user)
-    saveSession(data.session_token, data.user)
-    router.push({ name: 'dashboard' })
-  } catch (err) {
-    errorMessage.value =
-      err.response?.data?.detail || 'Gagal login dengan Telegram. Coba lagi.'
-  } finally {
-    loading.value = false
-  }
-}
-
-onMounted(() => {
-  window.onTelegramAuth = handleTelegramAuth
-  loadTelegramWidgetScript().catch(() => {
-    errorMessage.value = 'Gagal memuat widget Telegram Login.'
-  })
-})
-
-onBeforeUnmount(() => {
-  delete window.onTelegramAuth
-})
+defineExpose({ startTelegramLogin })
 </script>
 
 <style scoped>
@@ -183,6 +154,22 @@ onBeforeUnmount(() => {
   0% { transform: scale(1) rotate(0deg); opacity: 0.8; }
   50% { transform: scale(1.1) rotate(180deg); opacity: 1; }
   100% { transform: scale(1) rotate(360deg); opacity: 0.8; }
+}
+  .telegram-login-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 32px;
+  border-radius: 12px;
+  background: #4f7dff;
+  color: #fff;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  font-size: 15px;
+}
+.telegram-login-btn:hover {
+  opacity: 0.9;
 }
 .content {
   width: 100%;
