@@ -8,6 +8,9 @@ const routes = [
   { path: '/', name: 'dashboard', component: DashboardHome, meta: { requiresAuth: true } },
   { path: '/idols', name: 'idols', component: IdolsList },
   { path: '/leaderboard', name: 'leaderboard', component: Leaderboard },
+  { path: '/tasks', name: 'tasks', component: TasksPage },
+  { path: '/profile', name: 'profile', component: ProfilePage, meta: { requiresAuth: true } },
+  
   // Add /idols, /tasks, /vote, /profile the same way as more HTML
   // screens get converted into components.
 ]
