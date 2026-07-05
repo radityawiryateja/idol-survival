@@ -2,6 +2,11 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { isAuthenticated } from '../lib/auth'
 import LoginPage from '../components/LoginPage.vue'
 import DashboardHome from '../components/DashboardHome.vue'
+import IdolsList from '../components/IdolList.vue'
+import Leaderboard from '../components/Leaderboard.vue'
+import TasksPage from '../components/TasksPage.vue'
+import ProfilePage from '../components/ProfilePage.vue'
+
 
 const routes = [
   { path: '/login', name: 'login', component: LoginPage },
