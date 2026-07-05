@@ -6,6 +6,8 @@ import DashboardHome from '../components/DashboardHome.vue'
 const routes = [
   { path: '/login', name: 'login', component: LoginPage },
   { path: '/', name: 'dashboard', component: DashboardHome, meta: { requiresAuth: true } },
+  { path: '/idols', name: 'idols', component: IdolsList },
+  { path: '/leaderboard', name: 'leaderboard', component: Leaderboard },
   // Add /idols, /tasks, /vote, /profile the same way as more HTML
   // screens get converted into components.
 ]
