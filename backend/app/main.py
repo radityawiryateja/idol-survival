@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.bot import start_bot, stop_bot
 from app.config import settings
-from app.routers import auth, protected
+from app.routers import auth, protected, idols, leaderboard, tasks, dashboard
 
 
 @asynccontextmanager
@@ -29,6 +29,10 @@ app.add_middleware(
 
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(protected.router, prefix="/api", tags=["protected"])
+app.include_router(idols.router, prefix="/api", tags=["idols"])
+app.include_router(leaderboard.router, prefix="/api", tags=["leaderboard"])
+app.include_router(tasks.router, prefix="/api", tags=["tasks"])
+app.include_router(dashboard.router, prefix="/api", tags=["dashboard"])
 
 
 @app.get("/")
