@@ -15,7 +15,7 @@ const routes = [
   { path: '/idols', name: 'idols', component: IdolsList },
   { path: '/leaderboard', name: 'leaderboard', component: Leaderboard },
   { path: '/tasks', name: 'tasks', component: TasksPage },
-  { path: '/profile', name: 'profile', component: ProfilePage, meta: { requiresAuth: true } }
+  { path: '/profile', name: 'profile', component: ProfilePage, meta: { requiresAuth: true } },
   { path: '/:pathMatch(.*)*', redirect: '/' }
 ]
 
