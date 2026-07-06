@@ -7,6 +7,7 @@ import IdolsList from '../components/IdolsList.vue'
 import Leaderboard from '../components/Leaderboard.vue'
 import TasksPage from '../components/TasksPage.vue'
 import ProfilePage from '../components/ProfilePage.vue'
+import IdCardPage from '../components/IdCardPage.vue'
 
 const routes = [
   { path: '/login', name: 'login', component: LoginPage },
@@ -16,6 +17,7 @@ const routes = [
   { path: '/leaderboard', name: 'leaderboard', component: Leaderboard },
   { path: '/tasks', name: 'tasks', component: TasksPage },
   { path: '/profile', name: 'profile', component: ProfilePage, meta: { requiresAuth: true } },
+  { path: '/idols/:id/card', name: 'idol-card', component: IdCardPage },
   { path: '/:pathMatch(.*)*', redirect: '/' }
 ]
 
