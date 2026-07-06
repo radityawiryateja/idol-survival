@@ -37,7 +37,7 @@ async function handleCallback() {
   }
 
   try {
-    const { data } = await api.post('/auth/telegram-callback', {
+    const { data } = await api.post('/api/telegram-callback', {
       code,
       code_verifier: codeVerifier,
     })
