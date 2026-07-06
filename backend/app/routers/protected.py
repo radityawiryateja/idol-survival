@@ -33,6 +33,7 @@ async def get_my_profile(current_user: dict = Depends(get_current_user)):
         "level": producer["level"],
         "avatarUrl": producer["photo_url"],
         "verified": producer["verified"],
+        "voteTickets": producer["vote_tickets"],
         "xp": {"current": producer["xp_current"], "max": producer["xp_max"]},
         "votesCast": producer["votes_cast"],
         "diamonds": producer["diamonds"],
