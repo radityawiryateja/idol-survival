@@ -101,7 +101,7 @@
             </div>
           </div>
 
-          <button class="vote-btn" :class="`vote-${idol.rank}`" @click="castVote(idol)">
+          <button class="vote-btn" :class="`vote-${idol.rank}`" @click="openVoteModal(idol)">
             Cast Vote
           </button>
         </div>
@@ -122,7 +122,7 @@
             <p class="row-votes-value">{{ idol.votes }}</p>
             <p class="row-votes-label">VOTES</p>
           </div>
-          <button class="row-vote-btn" @click="castVote(idol)" aria-label="Vote">
+          <button class="row-vote-btn" @click="openVoteModal(idol)" aria-label="Vote">
             <span class="material-symbols-outlined">how_to_reg</span>
           </button>
         </div>
@@ -130,6 +130,13 @@
     </main>
 
     <BottomNav />
+    <VoteModal
+      v-if="activeVoteIdol"
+      :idol="activeVoteIdol"
+      :balance="walletBalance"
+      @close="activeVoteIdol = null"
+      @confirm="onConfirmVote"
+      />
   </div>
 </template>
 
@@ -139,6 +146,7 @@ import api from '../lib/api'
 import { getUser } from '../lib/auth'
 import TopAppBar from './TopAppBar.vue'
 import BottomNav from './BottomNav.vue'
+import VoteModal from './VoteModal.vue'
 
 const profile = ref({ name: 'Producer', tier: 'DIAMOND SUPPORTER', level: 1, avatarUrl: '' })
 
@@ -148,6 +156,8 @@ const selectedSeason = ref(seasons[0])
 const chips = ['ALL', 'TOP RANK', 'POPULAR', 'ROOKIES', 'FAVORITES']
 const activeChip = ref('ALL')
 const totalContestants = ref(0)
+const walletBalance = ref(0)
+const activeVoteIdol = ref(null)
 
 const idols = ref([])
 
@@ -168,12 +178,21 @@ async function toggleFavorite(idol) {
   }
 }
 
-async function castVote(idol) {
+function openVoteModal(idol) {
+  activeVoteIdol.value = idol
+}
+
+async function onConfirmVote(quantity) {
+  const idol = activeVoteIdol.value
   try {
-    await api.post(`/idols/${idol.id}/vote`)
-    idol.votes = idol.votesRaw ? formatVotes(++idol.votesRaw) : idol.votes
+    const { data } = await api.post(`/idols/${idol.id}/vote`, { quantity })
+    walletBalance.value = data.remainingTickets
+    idol.votesRaw += quantity
+    idol.votes = formatVotes(idol.votesRaw)
   } catch (err) {
-    console.error('Failed to cast vote', err)
+    alert(err.response?.data?.detail || 'Gagal vote')
+  } finally {
+    activeVoteIdol.value = null
   }
 }
 
@@ -196,6 +215,12 @@ async function loadIdols() {
     totalContestants.value = data.total
   } catch (err) {
     console.error('Failed to load idols', err)
+  }
+  try {
+    const profileRes = await api.get('/profile/me')
+      walletBalance.value = profileRes.data.voteTickets
+  } catch (err) {
+    console.error('Failed to load wallet balance', err)
   }
 }
 
