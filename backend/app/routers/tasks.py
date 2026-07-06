@@ -35,19 +35,19 @@ async def tasks_summary(current_user: dict = Depends(get_current_user)):
     }
 
 
-@router.post("/tasks/{mission_id}/start")
-async def start_mission(mission_id: str, current_user: dict = Depends(get_current_user)):
-    return await _advance_mission(mission_id, current_user["sub"])
-
-
 @router.post("/tasks/{mission_id}/claim")
 async def claim_mission(mission_id: str, current_user: dict = Depends(get_current_user)):
     record_result = supabase.table("producer_missions").select("*").eq("id", mission_id).execute()
     if not record_result.data:
         raise HTTPException(status_code=404, detail="Mission not found")
     record = record_result.data[0]
+
     if record["producer_id"] != current_user["sub"]:
         raise HTTPException(status_code=403, detail="Not your mission")
+    if record["status"] == "claimed":
+        raise HTTPException(status_code=400, detail="Mission sudah pernah diklaim")
+    if record["status"] != "ready":
+        raise HTTPException(status_code=400, detail="Mission belum selesai, belum bisa diklaim")
 
     template = (
         supabase.table("mission_templates").select("*").eq("id", record["mission_template_id"]).execute().data[0]
@@ -69,28 +69,30 @@ async def claim_mission(mission_id: str, current_user: dict = Depends(get_curren
     }
 
 
-async def _advance_mission(mission_id: str, producer_id: str) -> dict:
+@router.post("/tasks/{mission_id}/share")
+async def share_mission(mission_id: str, current_user: dict = Depends(get_current_user)):
     record_result = supabase.table("producer_missions").select("*").eq("id", mission_id).execute()
     if not record_result.data:
         raise HTTPException(status_code=404, detail="Mission not found")
     record = record_result.data[0]
-    if record["producer_id"] != producer_id:
+
+    if record["producer_id"] != current_user["sub"]:
         raise HTTPException(status_code=403, detail="Not your mission")
+    if record["status"] == "claimed":
+        raise HTTPException(status_code=400, detail="Mission sudah pernah diklaim")
 
     template = (
         supabase.table("mission_templates").select("*").eq("id", record["mission_template_id"]).execute().data[0]
     )
-
-    new_progress = min(template["target_count"], record["progress_count"] + 1)
-    new_status = "ready" if new_progress >= template["target_count"] else "pending"
+    if template["validation_type"] != "manual":
+        raise HTTPException(status_code=400, detail="Mission ini terlacak otomatis, tidak perlu di-share manual")
 
     supabase.table("producer_missions").update(
-        {"progress_count": new_progress, "status": new_status}
+        {"progress_count": template["target_count"], "status": "ready"}
     ).eq("id", mission_id).execute()
 
-    progress_percent = round((new_progress / template["target_count"]) * 100)
-    status_text = (
-        "Ready to Claim!" if new_status == "ready" else f"{new_progress} / {template['target_count']} Completed"
-    )
-
-    return {"status": new_status, "statusText": status_text, "progressPercent": progress_percent}
+    return {
+        "status": "ready",
+        "statusText": "Ready to Claim!",
+        "progressPercent": 100,
+    }
