@@ -16,6 +16,7 @@ const routes = [
   { path: '/leaderboard', name: 'leaderboard', component: Leaderboard },
   { path: '/tasks', name: 'tasks', component: TasksPage },
   { path: '/profile', name: 'profile', component: ProfilePage, meta: { requiresAuth: true } }
+  { path: '/:pathMatch(.*)*', redirect: '/' }
 ]
 
 const router = createRouter({
