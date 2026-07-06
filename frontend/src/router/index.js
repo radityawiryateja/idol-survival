@@ -8,7 +8,6 @@ import Leaderboard from '../components/Leaderboard.vue'
 import TasksPage from '../components/TasksPage.vue'
 import ProfilePage from '../components/ProfilePage.vue'
 
-
 const routes = [
   { path: '/login', name: 'login', component: LoginPage },
   { path: '/auth/telegram/callback', name: 'telegram-callback', component: TelegramCallback },
@@ -16,16 +15,12 @@ const routes = [
   { path: '/idols', name: 'idols', component: IdolsList },
   { path: '/leaderboard', name: 'leaderboard', component: Leaderboard },
   { path: '/tasks', name: 'tasks', component: TasksPage },
-  { path: '/profile', name: 'profile', component: ProfilePage, meta: { requiresAuth: true } },
-  
-  // Add /idols, /tasks, /vote, /profile the same way as more HTML
-  // screens get converted into components.
+  { path: '/profile', name: 'profile', component: ProfilePage, meta: { requiresAuth: true } }
 ]
 
-
-import { createRouter, createWebHashHistory } from 'vue-router' 
 const router = createRouter({
-  history: createWebHashHistory(), 
+  // Sudah menggunakan Hash Mode yang aman dari error 404 Vercel
+  history: createWebHashHistory(),
   routes,
 })
 
