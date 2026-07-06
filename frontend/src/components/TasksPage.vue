@@ -119,7 +119,7 @@
           <button
             class="mission-action"
             :class="actionClass(mission.status)"
-            :disabled="mission.status === 'claimed'"
+            :disabled="mission.status === 'claimed' || (mission.status === 'pending' && mission.validationType !== 'manual')"
             @click="handleMissionAction(mission)"
           >
             {{ actionLabel(mission.status) }}
@@ -197,29 +197,57 @@ function formatShort(n) {
   return n >= 1000 ? `${(n / 1000).toFixed(n % 1000 === 0 ? 0 : 1)}k` : n
 }
 
-function actionLabel(status) {
-  if (status === 'claimed') return 'CLAIMED'
-  if (status === 'ready') return 'CLAIM'
-  return 'GO'
+function actionLabel(mission) {
+  if (mission.status === 'claimed') return 'CLAIMED'
+  if (mission.status === 'ready') return 'CLAIM'
+  if (mission.validationType === 'manual') return 'SHARE'
+  return 'AUTO'
 }
 
-function actionClass(status) {
-  if (status === 'claimed') return 'action-claimed'
-  if (status === 'ready') return 'action-ready'
-  return 'action-go'
+function actionClass(mission) {
+  if (mission.status === 'claimed') return 'action-claimed'
+  if (mission.status === 'ready') return 'action-ready'
+  if (mission.validationType === 'manual') return 'action-go'
+  return 'action-auto'
 }
 
 async function handleMissionAction(mission) {
   if (mission.status === 'claimed') return
 
-  const endpoint = mission.status === 'ready' ? 'claim' : 'start'
+  if (mission.status === 'ready') {
+    try {
+      const { data } = await api.post(`/tasks/${mission.id}/claim`)
+      mission.status = data.status
+      mission.statusText = data.statusText
+      mission.progressPercent = data.progressPercent
+    } catch (err) {
+      alert(err.response?.data?.detail || 'Gagal klaim misi')
+    }
+    return
+  }
+
+  // Status masih 'pending' — cuma tipe 'manual' yang boleh dipicu manual.
+  if (mission.validationType !== 'manual') return
+
+  if (navigator.share) {
+    try {
+      await navigator.share({
+        title: 'Idol Survival',
+        text: 'Cek ranking terbaru di Idol Survival!',
+        url: window.location.origin,
+      })
+    } catch {
+      return // user batal share
+    }
+  }
+
   try {
-    const { data } = await api.post(`/tasks/${mission.id}/${endpoint}`)
+    const { data } = await api.post(`/tasks/${mission.id}/share`)
     mission.status = data.status
     mission.statusText = data.statusText
     mission.progressPercent = data.progressPercent
   } catch (err) {
-    console.error('Failed to update mission', err)
+    alert(err.response?.data?.detail || 'Gagal update misi')
   }
 }
 
@@ -465,6 +493,11 @@ onMounted(loadTasks)
   font-size: 12px;
   color: #c3c5d7;
   margin: 0;
+}
+.action-auto {
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(195, 197, 215, 0.4);
+  cursor: default;
 }
 .mission-status.ready {
   color: #b5c4ff;
