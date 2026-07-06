@@ -8,7 +8,7 @@ from app.services.telegram_oidc import exchange_code_for_tokens, verify_id_token
 router = APIRouter()
 
 
-@router.post("/api/telegram-callback", response_model=SessionResponse)
+@router.post("/auth/telegram-callback", response_model=SessionResponse)
 async def telegram_callback(payload: TelegramOidcCallback):
     try:
         tokens = await exchange_code_for_tokens(payload.code, payload.code_verifier)
