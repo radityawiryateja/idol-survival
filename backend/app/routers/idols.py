@@ -2,9 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.routers.protected import get_current_user
 from app.services.supabase_client import supabase
+from pydantic import BaseModel
 
 router = APIRouter()
 
+class CastVoteRequest(BaseModel):
+    quantity: int = 1
 
 def _format_votes(n: int) -> str:
     if n >= 1_000_000:
@@ -77,10 +80,30 @@ async def toggle_favorite(idol_id: str, current_user: dict = Depends(get_current
 
 
 @router.post("/idols/{idol_id}/vote")
-async def cast_vote(idol_id: str, current_user: dict = Depends(get_current_user)):
-    # votes di idols & votes_cast di producers naik otomatis lewat DB trigger
-    supabase.table("vote_logs").insert({"producer_id": current_user["sub"], "idol_id": idol_id}).execute()
-    return {"status": "ok"}
+async def cast_vote(
+    idol_id: str,
+    payload: CastVoteRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    if payload.quantity < 1:
+        raise HTTPException(status_code=400, detail="Jumlah vote minimal 1")
+
+    try:
+        result = supabase.rpc(
+            "cast_vote_rpc",
+            {
+                "p_producer_id": current_user["sub"],
+                "p_idol_id": idol_id,
+                "p_quantity": payload.quantity,
+            },
+        ).execute()
+    except Exception as exc:
+        if "Insufficient vote tickets" in str(exc):
+            raise HTTPException(status_code=400, detail="Saldo vote tiket kamu tidak cukup")
+        raise HTTPException(status_code=400, detail="Gagal melakukan vote")
+
+    remaining = result.data[0]["remaining_tickets"] if result.data else None
+    return {"status": "ok", "remainingTickets": remaining}
 
 
 @router.get("/idols/{idol_id}/card")
