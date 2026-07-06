@@ -2,7 +2,7 @@ import axios from 'axios'
 import { clearSession, getSessionToken } from './auth'
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api',
+  baseURL: 'https://idol-survival.onrender.com', 
 })
 
 // Attach the session token (issued by the backend after Telegram login)
