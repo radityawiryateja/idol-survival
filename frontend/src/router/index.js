@@ -22,8 +22,10 @@ const routes = [
   // screens get converted into components.
 ]
 
+
+import { createRouter, createWebHashHistory } from 'vue-router' 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHashHistory(), 
   routes,
 })
 
