@@ -1,4 +1,4 @@
-import { createRouter, createWebHashHistory } from 'vue-router'
+import { createRouter, createWebHistory } from 'vue-router'
 import { isAuthenticated } from '../lib/auth'
 import LoginPage from '../components/LoginPage.vue'
 import TelegramCallback from '../components/TelegramCallback.vue'
@@ -19,8 +19,7 @@ const routes = [
 ]
 
 const router = createRouter({
-  // Sudah menggunakan Hash Mode yang aman dari error 404 Vercel
-  history: createWebHashHistory(),
+  history: createWebHistory(),
   routes,
 })
 
