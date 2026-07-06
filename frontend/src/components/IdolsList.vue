@@ -57,15 +57,16 @@
           :class="`premium-${idol.rank}`"
         >
           <div class="card-row">
-            <div class="portrait">
+            <router-link :to="`/idols/${idol.id}/card`" class="portrait">
               <img :src="idol.photo" :alt="idol.name" />
               <span class="rank-badge" :class="`rank-${idol.rank}`">RANK {{ idol.rank }}</span>
-            </div>
+            </router-link>
             <div class="info">
               <div class="info-top">
                 <div>
                   <h3 class="idol-name">{{ idol.name }}</h3>
                   <p class="agency" :class="`agency-${idol.rank}`">{{ idol.agency }}</p>
+                  <router-link :to="`/idols/${idol.id}/card`" class="idcard-link">View ID Card →</router-link>
                 </div>
                 <button
                   class="fav-btn"
@@ -111,9 +112,9 @@
       <section class="idol-list-compact">
         <div v-for="idol in restOfList" :key="idol.id" class="idol-row">
           <span class="row-rank">{{ String(idol.rank).padStart(2, '0') }}</span>
-          <div class="row-avatar">
+          <router-link :to="`/idols/${idol.id}/card`" class="row-avatar">
             <img :src="idol.photo" :alt="idol.name" />
-          </div>
+          </router-link>
           <div class="row-info">
             <h4>{{ idol.name }}</h4>
             <p>{{ idol.agency }}</p>
@@ -395,6 +396,13 @@ onMounted(loadIdols)
   flex-direction: column;
   justify-content: space-between;
   padding: 4px 0;
+}
+.idcard-link {
+  font-size: 11px;
+  color: #b5c4ff;
+  text-decoration: none;
+  margin-top: 4px;
+  display: inline-block;
 }
 .info-top {
   display: flex;
