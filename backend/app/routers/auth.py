@@ -55,3 +55,9 @@ async def telegram_callback(payload: TelegramOidcCallback):
         # Ini akan menangkap error Supabase/Token dan menampilkannya ke frontend!
         print(f"CRASH DETAIL: {str(exc)}")
         raise HTTPException(status_code=400, detail=f"Backend Error: {str(exc)}")
+
+@router.post("/logout")
+async def logout():
+    # Session token JWT bersifat stateless — cukup return 200,
+    # penghapusan sesungguhnya terjadi di frontend (clearSession()).
+    return {"status": "ok"}
