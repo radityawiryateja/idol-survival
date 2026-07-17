@@ -58,7 +58,7 @@
         >
           <div class="card-row">
             <router-link :to="`/idols/${idol.id}/card`" class="portrait">
-              <img :src="idol.photo" :alt="idol.name" />
+              <img :src="idol.photo || idol.photo_url" :alt="idol.name" />
               <span class="rank-badge" :class="`rank-${idol.rank}`">RANK {{ idol.rank }}</span>
             </router-link>
             <div class="info">
@@ -113,7 +113,7 @@
         <div v-for="idol in restOfList" :key="idol.id" class="idol-row">
           <span class="row-rank">{{ String(idol.rank).padStart(2, '0') }}</span>
           <router-link :to="`/idols/${idol.id}/card`" class="row-avatar">
-            <img :src="idol.photo" :alt="idol.name" />
+            <img :src="idol.photo || idol.photo_url" :alt="idol.name" />
           </router-link>
           <div class="row-info">
             <h4>{{ idol.name }}</h4>
