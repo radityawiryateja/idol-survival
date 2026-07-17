@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.bot import start_bot, stop_bot
 from app.config import settings
-from app.routers import auth, protected, idols, leaderboard, tasks, dashboard, rewards
+from app.routers import auth, protected, idols, leaderboard, tasks, dashboard, rewards, shop
 
 
 @asynccontextmanager
@@ -34,6 +34,7 @@ app.include_router(leaderboard.router, prefix="/api", tags=["leaderboard"])
 app.include_router(tasks.router, prefix="/api", tags=["tasks"])
 app.include_router(dashboard.router, prefix="/api", tags=["dashboard"])
 app.include_router(rewards.router, prefix="/api", tags=["rewards"])
+app.include_router(shop.router, prefix="/api", tags=["shop"])
 
 
 @app.get("/")
