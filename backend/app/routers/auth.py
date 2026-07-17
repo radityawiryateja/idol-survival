@@ -1,12 +1,13 @@
+import json
+from pydantic import BaseModel
 from fastapi import APIRouter, HTTPException
-
 from app.schemas import SessionResponse, TelegramOidcCallback
 from app.services.session import create_session_token
 from app.services.supabase_client import supabase
 from app.services.telegram_oidc import exchange_code_for_tokens, verify_id_token
+from app.services.telegram_auth import verify_webapp_init_data
 
 router = APIRouter()
-
 
 @router.post("/telegram-callback", response_model=SessionResponse)
 async def telegram_callback(payload: TelegramOidcCallback):
@@ -61,3 +62,57 @@ async def logout():
     # Session token JWT bersifat stateless — cukup return 200,
     # penghapusan sesungguhnya terjadi di frontend (clearSession()).
     return {"status": "ok"}
+
+class WebAppLoginRequest(BaseModel):
+    init_data: str
+
+@router.post("/webapp-login", response_model=SessionResponse)
+async def webapp_login(payload: WebAppLoginRequest):
+    # 1. Validasi hash bawaan Telegram
+    parsed_data = verify_webapp_init_data(payload.init_data)
+    if not parsed_data:
+        raise HTTPException(status_code=401, detail="Invalid Telegram Web App data")
+    
+    user_str = parsed_data.get("user")
+    if not user_str:
+        raise HTTPException(status_code=400, detail="No user data found")
+        
+    # 2. Ambil data dari payload JSON
+    tg_user = json.loads(user_str)
+    telegram_id = tg_user.get("id")
+    first_name = tg_user.get("first_name", "Producer")
+    last_name = tg_user.get("last_name")
+    username = tg_user.get("username")
+    photo_url = tg_user.get("photo_url")
+
+    # 3. Simpan atau update ke database Supabase
+    try:
+        existing = (
+            supabase.table("producers").select("*").eq("telegram_id", telegram_id).execute()
+        )
+
+        profile_fields = {
+            "first_name": first_name,
+            "last_name": last_name,
+            "username": username,
+            "photo_url": photo_url,
+        }
+
+        if existing.data:
+            user = existing.data[0]
+            supabase.table("producers").update(profile_fields).eq("id", user["id"]).execute()
+        else:
+            insert_result = (
+                supabase.table("producers")
+                .insert({"telegram_id": telegram_id, **profile_fields})
+                .execute()
+            )
+            user = insert_result.data[0]
+
+        # 4. Buat session token
+        session_token = create_session_token(user_id=str(user["id"]), telegram_id=telegram_id)
+        return SessionResponse(session_token=session_token, user=user)
+    
+    except Exception as exc:
+        print(f"CRASH DETAIL: {str(exc)}")
+        raise HTTPException(status_code=400, detail=f"Backend Error: {str(exc)}")
