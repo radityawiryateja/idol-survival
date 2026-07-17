@@ -5,7 +5,7 @@
       <button class="back-btn" @click="goBack" aria-label="Back">
         <span class="material-symbols-outlined">arrow_back_ios_new</span>
       </button>
-      <h1 class="bar-title">PRODUCER DASHBOARD</h1>
+      <h1 class="bar-title">IDOL SURVIVAL</h1>
       <div class="bar-avatar">
         <img :src="profile.avatarUrl" :alt="profile.name" />
       </div>
@@ -355,7 +355,7 @@ onMounted(loadIdCard)
   color: #c3c5d7;
 }
 .level-value {
-  font-size: 24px;
+  font-size: 18px;
   font-weight: 700;
   color: #b5c4ff;
 }
