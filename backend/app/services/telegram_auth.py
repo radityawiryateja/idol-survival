@@ -1,22 +1,11 @@
-"""
-Validates the payload sent by the Telegram Login Widget.
-
-Telegram's spec: https://core.telegram.org/widgets/login
-1. Remove the "hash" field from the payload.
-2. Build a data-check-string: all remaining fields as "key=value",
-   sorted alphabetically by key, joined with "\n".
-3. secret_key = SHA256(bot_token)
-4. computed_hash = HMAC-SHA256(data_check_string, secret_key), hex-encoded
-5. computed_hash must equal the "hash" field the widget sent.
-6. auth_date should not be too old (replay-attack mitigation).
-"""
 import hashlib
 import hmac
 import time
+from urllib.parse import parse_qsl
 
 from app.config import settings
 
-MAX_AUTH_AGE_SECONDS = 24 * 60 * 60  # 1 day
+MAX_AUTH_AGE_SECONDS = 24 * 60 * 60
 
 
 def verify_telegram_auth(data: dict) -> bool:
@@ -43,3 +32,38 @@ def verify_telegram_auth(data: dict) -> bool:
         return False
 
     return True
+
+def verify_webapp_init_data(init_data: str) -> dict | None:
+    """
+    Validasi data yang dikirimkan oleh Telegram Web App (Mini App).
+    """
+    if not settings.TELEGRAM_BOT_TOKEN:
+        raise RuntimeError("TELEGRAM_BOT_TOKEN is not configured")
+
+    # Parse query string init_data menjadi dictionary
+    parsed_data = dict(parse_qsl(init_data))
+    if "hash" not in parsed_data:
+        return None
+
+    received_hash = parsed_data.pop("hash")
+    
+    # Format string sesuai abjad
+    data_check_string = "\n".join(f"{k}={v}" for k, v in sorted(parsed_data.items()))
+
+    # Secret key untuk Web App menggunakan HMAC SHA256 dari "WebAppData" dan bot token
+    secret_key = hmac.new(
+        b"WebAppData", settings.TELEGRAM_BOT_TOKEN.encode(), hashlib.sha256
+    ).digest()
+
+    computed_hash = hmac.new(
+        secret_key, data_check_string.encode(), hashlib.sha256
+    ).hexdigest()
+
+    if not hmac.compare_digest(computed_hash, received_hash):
+        return None
+        
+    auth_date = int(parsed_data.get("auth_date", 0))
+    if time.time() - auth_date > MAX_AUTH_AGE_SECONDS:
+        return None
+
+    return parsed_data
