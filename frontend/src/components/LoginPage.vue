@@ -18,13 +18,18 @@
     </div>
 
     <main class="content">
-      <!-- Telegram injects its own iframe button into this container -->
-      <button class="telegram-login-btn" @click="startTelegramLogin">
+      <!-- Sembunyikan tombol kalau sedang proses Auto-Login di Web App -->
+      <button 
+        v-if="!isWebApp" 
+        class="telegram-login-btn" 
+        @click="startTelegramLogin"
+        :disabled="loading"
+      >
         <span class="material-symbols-outlined">send</span>
         Login with Telegram
       </button>
 
-      <p v-if="loading" class="loading-text">Signing you in...</p>
+      <p v-if="loading" class="loading-text">{{ loadingText }}</p>
       <p v-if="errorMessage" class="error-text">{{ errorMessage }}</p>
     </main>
 
@@ -37,34 +42,75 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import api from '../lib/api'
+import { saveSession } from '../lib/auth'
 import { generateCodeChallenge, generateRandomString } from '../lib/pkce'
+
+const router = useRouter()
+const loading = ref(false)
+const isWebApp = ref(false)
+const errorMessage = ref('')
+const loadingText = ref('Signing you in...')
 
 const CLIENT_ID = import.meta.env.VITE_TELEGRAM_OIDC_CLIENT_ID
 const REDIRECT_URI = import.meta.env.VITE_TELEGRAM_OIDC_REDIRECT_URI
 
-// Called when the person taps "Login with Telegram". Generates the PKCE
-// pair + anti-CSRF state, stashes the verifier+state in sessionStorage
-// (we need them again once Telegram redirects back), then navigates
-// away to Telegram's own authorization page.
+onMounted(async () => {
+  const tg = window.Telegram?.WebApp
+  
+  // Jika terdapat initData, berarti aplikasi dibuka langsung via Telegram Mini App
+  if (tg && tg.initData) {
+    isWebApp.value = true
+    loading.value = true
+    loadingText.value = 'Auto-authenticating with Telegram...'
+    
+    try {
+      // Hit endpoint baru menggunakan initData (tanpa perlu lewat OIDC redirection)
+      const { data } = await api.post('/auth/webapp-login', {
+        init_data: tg.initData
+      })
+      
+      saveSession(data.session_token, data.user)
+      router.push({ name: 'dashboard' })
+    } catch (err) {
+      console.error(err)
+      isWebApp.value = false // Tampilkan lagi tombol manual jika auto-login gagal
+      errorMessage.value = err.response?.data?.detail || 'Auto-login gagal.'
+    } finally {
+      loading.value = false
+    }
+  }
+})
+
+// Fungsi lama untuk fallback login dari eksternal browser
 async function startTelegramLogin() {
-  const state = generateRandomString(32)
-  const codeVerifier = generateRandomString(64)
-  const codeChallenge = await generateCodeChallenge(codeVerifier)
+  loading.value = true
+  errorMessage.value = ''
+  
+  try {
+    const state = generateRandomString(32)
+    const codeVerifier = generateRandomString(64)
+    const codeChallenge = await generateCodeChallenge(codeVerifier)
 
-  sessionStorage.setItem('tg_oidc_state', state)
-  sessionStorage.setItem('tg_oidc_verifier', codeVerifier)
+    sessionStorage.setItem('tg_oidc_state', state)
+    sessionStorage.setItem('tg_oidc_verifier', codeVerifier)
 
-  const authUrl = new URL('https://oauth.telegram.org/auth')
-  authUrl.searchParams.set('client_id', CLIENT_ID)
-  authUrl.searchParams.set('redirect_uri', REDIRECT_URI)
-  authUrl.searchParams.set('response_type', 'code')
-  authUrl.searchParams.set('scope', 'openid profile phone')
-  authUrl.searchParams.set('state', state)
-  authUrl.searchParams.set('code_challenge', codeChallenge)
-  authUrl.searchParams.set('code_challenge_method', 'S256')
+    const authUrl = new URL('https://oauth.telegram.org/auth')
+    authUrl.searchParams.set('client_id', CLIENT_ID)
+    authUrl.searchParams.set('redirect_uri', REDIRECT_URI)
+    authUrl.searchParams.set('response_type', 'code')
+    authUrl.searchParams.set('scope', 'openid profile phone')
+    authUrl.searchParams.set('state', state)
+    authUrl.searchParams.set('code_challenge', codeChallenge)
+    authUrl.searchParams.set('code_challenge_method', 'S256')
 
-  window.location.href = authUrl.toString()
+    window.location.href = authUrl.toString()
+  } catch (err) {
+    loading.value = false
+    errorMessage.value = 'Gagal memulai login eksternal.'
+  }
 }
 
 defineExpose({ startTelegramLogin })
