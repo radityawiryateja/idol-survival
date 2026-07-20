@@ -12,7 +12,8 @@
     "vue": "^3.4.0",
     "vue-router": "^4.3.0",
     "axios": "^1.6.0",
-    "@supabase/supabase-js": "^2.43.0"
+    "@supabase/supabase-js": "^2.43.0",
+    "twemoji": "^14.0.2"
   },
   "devDependencies": {
     "vite": "^5.2.0",
