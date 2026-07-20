@@ -5,11 +5,16 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.bot import start_bot, stop_bot
 from app.config import settings
+from app.services.supabase_client import init_supabase
 from app.routers import auth, protected, idols, leaderboard, tasks, dashboard, rewards, shop, talks
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Supabase client HARUS diinisialisasi duluan, karena bot.py (start_bot)
+    # juga memakai `supabase` global yang sama saat handler-nya jalan.
+    await init_supabase()
+
     # Run the Telegram bot's long-polling loop as a background task so it
     # doesn't block Uvicorn's event loop.
     await start_bot()
