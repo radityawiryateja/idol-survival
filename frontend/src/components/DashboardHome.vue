@@ -8,106 +8,110 @@
     />
 
     <main class="content">
-      <section class="hero-card">
-        <div class="hero-top">
-          <div>
-            <p class="season-label">SURVIVAL SEASON 04</p>
-            <h2 class="hero-title">REBIRTH OF THE STAR</h2>
-          </div>
-          <div class="days-left">{{ season.daysLeft }} DAYS LEFT</div>
-        </div>
+      <LoadingSpinner v-if="loading" label="Memuat dashboard..." />
 
-        <div class="stats-grid">
-          <div class="stat-box">
-            <div class="stat-label">
-              <span class="material-symbols-outlined">confirmation_number</span>VOTE TICKETS
-            </div>
-            <p class="stat-value">{{ stats.voteTickets }}</p>
-          </div>
-          <div class="stat-box">
-            <div class="stat-label">
-              <span class="material-symbols-outlined">diamond</span>DIAMONDS
-            </div>
-            <p class="stat-value">{{ stats.diamonds }}</p>
-          </div>
-        </div>
-
-        <div class="hero-footer">
-          <div>
-            <span class="supporter-label">SUPPORTER POINTS</span>
-            <div class="progress-row">
-              <div class="progress-bar">
-                <div class="progress-fill" :style="{ width: supporterPercent + '%' }"></div>
-              </div>
-              <span class="progress-text">{{ stats.supporterPoints }} / {{ stats.supporterCap }}</span>
-            </div>
-          </div>
-          <div class="live-badge"><span class="dot"></span>LIVE NOW</div>
-        </div>
-      </section>
-
-      <section class="action-grid">
-        <router-link
-          v-for="action in actions"
-          :key="action.label"
-          :to="action.to"
-          class="action-item"
-        >
-          <div class="action-icon" :class="{ primary: action.primary }">
-            <span class="material-symbols-outlined">{{ action.icon }}</span>
-          </div>
-          <span class="action-label">{{ action.label }}</span>
-        </router-link>
-      </section>
-
-      <section class="live-banner" :style="bannerStyle">
-        <div class="banner-overlay"></div>
-        <div class="banner-content">
-          <span class="banner-tag">LIVE PERFORMANCE</span>
-          <h3>{{ liveBanner.title }}</h3>
-          <p>{{ liveBanner.viewers }} Viewers Streaming Now</p>
-        </div>
-      </section>
-
-      <section class="featured-idols">
-        <div class="section-head">
-          <h3>FEATURED IDOLS</h3>
-          <router-link to="/idols" class="see-all">SEE ALL</router-link>
-        </div>
-        <div class="idols-scroll">
-          <router-link
-            v-for="idol in featuredIdols"
-            :key="idol.id"
-            :to="`/idols/${idol.id}`"
-            class="idol-card"
-          >
-            <img :src="idol.photo" :alt="idol.name" />
-            <span class="rank-badge">RANK {{ idol.rank }}</span>
-            <span class="idol-name">{{ idol.name }}</span>
-          </router-link>
-        </div>
-      </section>
-
-      <section class="missions">
-        <h3>TODAY'S MISSIONS</h3>
-        <div
-          v-for="mission in missions"
-          :key="mission.title"
-          class="mission-card"
-          :class="{ highlighted: mission.highlighted }"
-        >
-          <div class="mission-info">
-            <div class="mission-icon">
-              <span class="material-symbols-outlined">{{ mission.icon }}</span>
-            </div>
+      <template v-else>
+        <section class="hero-card">
+          <div class="hero-top">
             <div>
-              <h4>{{ mission.title }}</h4>
-              <p>{{ mission.reward }}</p>
+              <p class="season-label">SURVIVAL SEASON 04</p>
+              <h2 class="hero-title">REBIRTH OF THE STAR</h2>
+            </div>
+            <div class="days-left">{{ season.daysLeft }} DAYS LEFT</div>
+          </div>
+
+          <div class="stats-grid">
+            <div class="stat-box">
+              <div class="stat-label">
+                <span class="material-symbols-outlined">confirmation_number</span>VOTE TICKETS
+              </div>
+              <p class="stat-value">{{ stats.voteTickets }}</p>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">
+                <span class="material-symbols-outlined">diamond</span>DIAMONDS
+              </div>
+              <p class="stat-value">{{ stats.diamonds }}</p>
             </div>
           </div>
-          <button class="mission-btn" :class="{ active: mission.highlighted }">GO</button>
-        </div>
-      </section>
+
+          <div class="hero-footer">
+            <div>
+              <span class="supporter-label">SUPPORTER POINTS</span>
+              <div class="progress-row">
+                <div class="progress-bar">
+                  <div class="progress-fill" :style="{ width: supporterPercent + '%' }"></div>
+                </div>
+                <span class="progress-text">{{ stats.supporterPoints }} / {{ stats.supporterCap }}</span>
+              </div>
+            </div>
+            <div class="live-badge"><span class="dot"></span>LIVE NOW</div>
+          </div>
+        </section>
+
+        <section class="action-grid">
+          <router-link
+            v-for="action in actions"
+            :key="action.label"
+            :to="action.to"
+            class="action-item"
+          >
+            <div class="action-icon" :class="{ primary: action.primary }">
+              <span class="material-symbols-outlined">{{ action.icon }}</span>
+            </div>
+            <span class="action-label">{{ action.label }}</span>
+          </router-link>
+        </section>
+
+        <section class="live-banner" :style="bannerStyle">
+          <div class="banner-overlay"></div>
+          <div class="banner-content">
+            <span class="banner-tag">LIVE PERFORMANCE</span>
+            <h3>{{ liveBanner.title }}</h3>
+            <p>{{ liveBanner.viewers }} Viewers Streaming Now</p>
+          </div>
+        </section>
+
+        <section class="featured-idols">
+          <div class="section-head">
+            <h3>FEATURED IDOLS</h3>
+            <router-link to="/idols" class="see-all">SEE ALL</router-link>
+          </div>
+          <div class="idols-scroll">
+            <router-link
+              v-for="idol in featuredIdols"
+              :key="idol.id"
+              :to="`/idols/${idol.id}`"
+              class="idol-card"
+            >
+              <img :src="idol.photo" :alt="idol.name" />
+              <span class="rank-badge">RANK {{ idol.rank }}</span>
+              <span class="idol-name">{{ idol.name }}</span>
+            </router-link>
+          </div>
+        </section>
+
+        <section class="missions">
+          <h3>TODAY'S MISSIONS</h3>
+          <div
+            v-for="mission in missions"
+            :key="mission.title"
+            class="mission-card"
+            :class="{ highlighted: mission.highlighted }"
+          >
+            <div class="mission-info">
+              <div class="mission-icon">
+                <span class="material-symbols-outlined">{{ mission.icon }}</span>
+              </div>
+              <div>
+                <h4>{{ mission.title }}</h4>
+                <p>{{ mission.reward }}</p>
+              </div>
+            </div>
+            <button class="mission-btn" :class="{ active: mission.highlighted }">GO</button>
+          </div>
+        </section>
+      </template>
     </main>
 
     <BottomNav />
@@ -120,6 +124,7 @@ import api from '../lib/api'
 import { getUser } from '../lib/auth'
 import BottomNav from './BottomNav.vue'
 import TopAppBar from './TopAppBar.vue'
+import LoadingSpinner from './LoadingSpinner.vue'
 
 const profile = ref({
   name: 'Producer',
@@ -128,6 +133,7 @@ const profile = ref({
   avatarUrl: '',
 })
 
+const loading = ref(true)
 const season = ref({ daysLeft: 0 })
 const stats = ref({ voteTickets: 0, diamonds: 0, supporterPoints: 0, supporterCap: 10000 })
 const liveBanner = ref({ title: '', viewers: '', image: '' })
@@ -163,6 +169,7 @@ async function loadDashboardData() {
     profile.value.avatarUrl = cachedUser.photo_url || ''
   }
 
+  loading.value = true
   try {
     const { data } = await api.get('/dashboard/summary')
     profile.value = { ...profile.value, ...data.profile }
@@ -173,6 +180,8 @@ async function loadDashboardData() {
     missions.value = data.missions
   } catch (err) {
     console.error('Failed to load dashboard data', err)
+  } finally {
+    loading.value = false
   }
 }
 

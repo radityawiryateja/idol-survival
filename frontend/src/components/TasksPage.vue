@@ -8,150 +8,154 @@
     />
 
     <main class="content">
-      <!-- Progress rings -->
-      <section class="progress-card">
-        <div class="progress-inner">
-          <div class="rings-wrap">
-            <svg viewBox="0 0 100 100" class="rings-svg">
-              <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="8" />
-              <circle
-                cx="50" cy="50" r="45" fill="none" stroke="url(#gradPrimary)"
-                stroke-width="8" stroke-linecap="round"
-                :stroke-dasharray="ringCircumference(45)"
-                :stroke-dashoffset="ringOffset(45, rings.xp)"
-                class="ring-circle"
-              />
-              <circle cx="50" cy="50" r="34" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="8" />
-              <circle
-                cx="50" cy="50" r="34" fill="none" stroke="url(#gradSecondary)"
-                stroke-width="8" stroke-linecap="round"
-                :stroke-dasharray="ringCircumference(34)"
-                :stroke-dashoffset="ringOffset(34, rings.supporter)"
-                class="ring-circle"
-              />
-              <circle cx="50" cy="50" r="23" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="8" />
-              <circle
-                cx="50" cy="50" r="23" fill="none" stroke="#FFD700"
-                stroke-width="8" stroke-linecap="round"
-                :stroke-dasharray="ringCircumference(23)"
-                :stroke-dashoffset="ringOffset(23, rings.streak)"
-                class="ring-circle"
-              />
-              <defs>
-                <linearGradient id="gradPrimary" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stop-color="#4F7DFF" />
-                  <stop offset="100%" stop-color="#3D66D6" />
-                </linearGradient>
-                <linearGradient id="gradSecondary" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stop-color="#c5c0ff" />
-                  <stop offset="100%" stop-color="#3c24c5" />
-                </linearGradient>
-              </defs>
-            </svg>
-            <div class="rings-center">
-              <span class="material-symbols-outlined">bolt</span>
-            </div>
-          </div>
+      <LoadingSpinner v-if="loading" label="Memuat misi..." />
 
-          <div class="progress-details">
-            <div>
-              <p class="detail-label">XP PROGRESS</p>
-              <div class="detail-value-row">
-                <span class="detail-value">{{ rings.xp.current }}</span>
-                <span class="detail-max">/ {{ formatShort(rings.xp.max) }}</span>
+      <template v-else>
+        <!-- Progress rings -->
+        <section class="progress-card">
+          <div class="progress-inner">
+            <div class="rings-wrap">
+              <svg viewBox="0 0 100 100" class="rings-svg">
+                <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="8" />
+                <circle
+                  cx="50" cy="50" r="45" fill="none" stroke="url(#gradPrimary)"
+                  stroke-width="8" stroke-linecap="round"
+                  :stroke-dasharray="ringCircumference(45)"
+                  :stroke-dashoffset="ringOffset(45, rings.xp)"
+                  class="ring-circle"
+                />
+                <circle cx="50" cy="50" r="34" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="8" />
+                <circle
+                  cx="50" cy="50" r="34" fill="none" stroke="url(#gradSecondary)"
+                  stroke-width="8" stroke-linecap="round"
+                  :stroke-dasharray="ringCircumference(34)"
+                  :stroke-dashoffset="ringOffset(34, rings.supporter)"
+                  class="ring-circle"
+                />
+                <circle cx="50" cy="50" r="23" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="8" />
+                <circle
+                  cx="50" cy="50" r="23" fill="none" stroke="#FFD700"
+                  stroke-width="8" stroke-linecap="round"
+                  :stroke-dasharray="ringCircumference(23)"
+                  :stroke-dashoffset="ringOffset(23, rings.streak)"
+                  class="ring-circle"
+                />
+                <defs>
+                  <linearGradient id="gradPrimary" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#4F7DFF" />
+                    <stop offset="100%" stop-color="#3D66D6" />
+                  </linearGradient>
+                  <linearGradient id="gradSecondary" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#c5c0ff" />
+                    <stop offset="100%" stop-color="#3c24c5" />
+                  </linearGradient>
+                </defs>
+              </svg>
+              <div class="rings-center">
+                <span class="material-symbols-outlined">bolt</span>
               </div>
             </div>
-            <div class="side-stats">
-              <div class="side-stat">
-                <p class="side-label supporter">SUPPORTER</p>
-                <p class="side-value">{{ rings.supporter.current }}</p>
+
+            <div class="progress-details">
+              <div>
+                <p class="detail-label">XP PROGRESS</p>
+                <div class="detail-value-row">
+                  <span class="detail-value">{{ rings.xp.current }}</span>
+                  <span class="detail-max">/ {{ formatShort(rings.xp.max) }}</span>
+                </div>
               </div>
-              <div class="side-stat bordered">
-                <p class="side-label streak">STREAK</p>
-                <p class="side-value">{{ rings.streak.current }}D</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="pass-row">
-          <div class="pass-info">
-            <span class="material-symbols-outlined pass-icon">stars</span>
-            <div>
-              <p class="pass-title">Season Pass Level {{ seasonPass.level }}</p>
-              <p class="pass-subtitle">{{ seasonPass.xpToNext }} XP until Level {{ seasonPass.level + 1 }}</p>
-            </div>
-          </div>
-          <span class="material-symbols-outlined chevron">chevron_right</span>
-        </div>
-      </section>
-
-      <!-- Daily missions -->
-      <section class="missions-section">
-        <div class="section-head">
-          <h2>Daily Missions</h2>
-          <span class="reset-timer">Resets in {{ resetsIn }}</span>
-        </div>
-
-        <div v-for="mission in dailyMissions" :key="mission.id" class="mission-card">
-          <div class="mission-icon" :class="`icon-${mission.color}`">
-            <span class="material-symbols-outlined">{{ mission.icon }}</span>
-          </div>
-          <div class="mission-body">
-            <div class="mission-top">
-              <h3>{{ mission.title }}</h3>
-              <div class="mission-reward" :class="`reward-${mission.color}`">
-                <span class="material-symbols-outlined reward-icon">{{ mission.rewardIcon }}</span>
-                <span>+{{ mission.rewardAmount }}</span>
+              <div class="side-stats">
+                <div class="side-stat">
+                  <p class="side-label supporter">SUPPORTER</p>
+                  <p class="side-value">{{ rings.supporter.current }}</p>
+                </div>
+                <div class="side-stat bordered">
+                  <p class="side-label streak">STREAK</p>
+                  <p class="side-value">{{ rings.streak.current }}D</p>
+                </div>
               </div>
             </div>
-            <div class="mission-progress-track">
-              <div
-                class="mission-progress-fill"
-                :class="`fill-${mission.color}`"
-                :style="{ width: mission.progressPercent + '%' }"
-              ></div>
-            </div>
-            <p class="mission-status" :class="{ ready: mission.status === 'ready' }">
-              {{ mission.statusText }}
-            </p>
           </div>
-          <button
-            class="mission-action"
-            :class="actionClass(mission.status)"
-            :disabled="mission.status === 'claimed' || (mission.status === 'pending' && mission.validationType !== 'manual')"
-            @click="handleMissionAction(mission)"
-          >
-            {{ actionLabel(mission.status) }}
-          </button>
-        </div>
-      </section>
 
-      <!-- Weekly milestone -->
-      <section class="weekly-section">
-        <h2>Weekly Reward</h2>
-        <div class="chest-card">
-          <div class="chest-top">
-            <div>
-              <p class="chest-title">Super Chest</p>
-              <p class="chest-subtitle">Collect {{ weeklyChest.target }} XP to unlock</p>
+          <div class="pass-row">
+            <div class="pass-info">
+              <span class="material-symbols-outlined pass-icon">stars</span>
+              <div>
+                <p class="pass-title">Season Pass Level {{ seasonPass.level }}</p>
+                <p class="pass-subtitle">{{ seasonPass.xpToNext }} XP until Level {{ seasonPass.level + 1 }}</p>
+              </div>
             </div>
-            <div class="chest-icon-wrap">
-              <div class="chest-glow"></div>
-              <span class="material-symbols-outlined chest-icon">card_giftcard</span>
+            <span class="material-symbols-outlined chevron">chevron_right</span>
+          </div>
+        </section>
+
+        <!-- Daily missions -->
+        <section class="missions-section">
+          <div class="section-head">
+            <h2>Daily Missions</h2>
+            <span class="reset-timer">Resets in {{ resetsIn }}</span>
+          </div>
+
+          <div v-for="mission in dailyMissions" :key="mission.id" class="mission-card">
+            <div class="mission-icon" :class="`icon-${mission.color}`">
+              <span class="material-symbols-outlined">{{ mission.icon }}</span>
+            </div>
+            <div class="mission-body">
+              <div class="mission-top">
+                <h3>{{ mission.title }}</h3>
+                <div class="mission-reward" :class="`reward-${mission.color}`">
+                  <span class="material-symbols-outlined reward-icon">{{ mission.rewardIcon }}</span>
+                  <span>+{{ mission.rewardAmount }}</span>
+                </div>
+              </div>
+              <div class="mission-progress-track">
+                <div
+                  class="mission-progress-fill"
+                  :class="`fill-${mission.color}`"
+                  :style="{ width: mission.progressPercent + '%' }"
+                ></div>
+              </div>
+              <p class="mission-status" :class="{ ready: mission.status === 'ready' }">
+                {{ mission.statusText }}
+              </p>
+            </div>
+            <button
+              class="mission-action"
+              :class="actionClass(mission.status)"
+              :disabled="mission.status === 'claimed' || (mission.status === 'pending' && mission.validationType !== 'manual')"
+              @click="handleMissionAction(mission)"
+            >
+              {{ actionLabel(mission.status) }}
+            </button>
+          </div>
+        </section>
+
+        <!-- Weekly milestone -->
+        <section class="weekly-section">
+          <h2>Weekly Reward</h2>
+          <div class="chest-card">
+            <div class="chest-top">
+              <div>
+                <p class="chest-title">Super Chest</p>
+                <p class="chest-subtitle">Collect {{ weeklyChest.target }} XP to unlock</p>
+              </div>
+              <div class="chest-icon-wrap">
+                <div class="chest-glow"></div>
+                <span class="material-symbols-outlined chest-icon">card_giftcard</span>
+              </div>
+            </div>
+            <div class="chest-progress">
+              <div class="chest-progress-labels">
+                <span>{{ weeklyChest.current }} / {{ weeklyChest.target }} XP</span>
+                <span class="chest-percent">{{ chestPercent }}%</span>
+              </div>
+              <div class="chest-track">
+                <div class="chest-fill" :style="{ width: chestPercent + '%' }"></div>
+              </div>
             </div>
           </div>
-          <div class="chest-progress">
-            <div class="chest-progress-labels">
-              <span>{{ weeklyChest.current }} / {{ weeklyChest.target }} XP</span>
-              <span class="chest-percent">{{ chestPercent }}%</span>
-            </div>
-            <div class="chest-track">
-              <div class="chest-fill" :style="{ width: chestPercent + '%' }"></div>
-            </div>
-          </div>
-        </div>
-      </section>
+        </section>
+      </template>
     </main>
 
     <BottomNav />
@@ -164,8 +168,10 @@ import api from '../lib/api'
 import { getUser } from '../lib/auth'
 import TopAppBar from './TopAppBar.vue'
 import BottomNav from './BottomNav.vue'
+import LoadingSpinner from './LoadingSpinner.vue'
 
 const profile = ref({ name: 'Producer', tier: 'DIAMOND SUPPORTER', level: 1, avatarUrl: '' })
+const loading = ref(true)
 
 const rings = ref({
   xp: { current: 0, max: 3000 },
@@ -258,6 +264,7 @@ async function loadTasks() {
     profile.value.avatarUrl = cachedUser.photo_url || ''
   }
 
+  loading.value = true
   try {
     const { data } = await api.get('/tasks/summary')
     rings.value = data.rings
@@ -267,6 +274,8 @@ async function loadTasks() {
     weeklyChest.value = data.weeklyChest
   } catch (err) {
     console.error('Failed to load tasks', err)
+  } finally {
+    loading.value = false
   }
 }
 

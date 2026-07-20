@@ -8,107 +8,111 @@
     />
 
     <main class="content">
-      <!-- Profile header -->
-      <section class="profile-header">
-        <div class="avatar-glow"></div>
-        <div class="avatar-wrap">
-          <div class="avatar-ring">
-            <div class="avatar-inner">
-              <img :src="profile.avatarUrl" :alt="profile.name" />
+      <LoadingSpinner v-if="loading" label="Memuat profil..." />
+
+      <template v-else>
+        <!-- Profile header -->
+        <section class="profile-header">
+          <div class="avatar-glow"></div>
+          <div class="avatar-wrap">
+            <div class="avatar-ring">
+              <div class="avatar-inner">
+                <img :src="profile.avatarUrl" :alt="profile.name" />
+              </div>
+            </div>
+            <span class="level-badge">LVL {{ profile.level }}</span>
+          </div>
+
+          <div class="identity">
+            <div class="name-row">
+              <h1>{{ profile.name }}</h1>
+              <span v-if="profile.verified" class="material-symbols-outlined verified-icon">verified</span>
+            </div>
+            <span class="tier-badge">{{ profile.tier }}</span>
+          </div>
+
+          <div class="xp-bar-wrap">
+            <div class="xp-labels">
+              <span>Producer XP</span>
+              <span>{{ profile.xp.current }} / {{ profile.xp.max }}</span>
+            </div>
+            <div class="xp-track">
+              <div class="xp-fill" :style="{ width: xpPercent + '%' }"></div>
             </div>
           </div>
-          <span class="level-badge">LVL {{ profile.level }}</span>
-        </div>
+        </section>
 
-        <div class="identity">
-          <div class="name-row">
-            <h1>{{ profile.name }}</h1>
-            <span v-if="profile.verified" class="material-symbols-outlined verified-icon">verified</span>
-          </div>
-          <span class="tier-badge">{{ profile.tier }}</span>
-        </div>
-
-        <div class="xp-bar-wrap">
-          <div class="xp-labels">
-            <span>Producer XP</span>
-            <span>{{ profile.xp.current }} / {{ profile.xp.max }}</span>
-          </div>
-          <div class="xp-track">
-            <div class="xp-fill" :style="{ width: xpPercent + '%' }"></div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Stats bento grid -->
-      <section class="stats-grid">
-        <div class="stat-box">
-          <div class="stat-label">
-            <span class="material-symbols-outlined">how_to_reg</span>
-            <span>VOTES CAST</span>
-          </div>
-          <span class="stat-value">{{ profile.votesCast }}</span>
-        </div>
-        <div class="stat-box">
-          <div class="stat-label">
-            <span class="material-symbols-outlined">diamond</span>
-            <span>DIAMONDS</span>
-          </div>
-          <span class="stat-value">{{ profile.diamonds }}</span>
-        </div>
-        <div class="stat-box wide">
-          <div class="achievements-info">
+        <!-- Stats bento grid -->
+        <section class="stats-grid">
+          <div class="stat-box">
             <div class="stat-label">
-              <span class="material-symbols-outlined">military_tech</span>
-              <span>ACHIEVEMENTS</span>
+              <span class="material-symbols-outlined">how_to_reg</span>
+              <span>VOTES CAST</span>
             </div>
-            <span class="stat-value">{{ profile.achievementsUnlocked }} Unlocked</span>
+            <span class="stat-value">{{ profile.votesCast }}</span>
           </div>
-          <div class="achievement-icons">
-            <div v-for="badge in profile.recentBadges" :key="badge.icon" class="badge-circle">
-              <span class="material-symbols-outlined" :class="`badge-${badge.color}`">{{ badge.icon }}</span>
+          <div class="stat-box">
+            <div class="stat-label">
+              <span class="material-symbols-outlined">diamond</span>
+              <span>DIAMONDS</span>
+            </div>
+            <span class="stat-value">{{ profile.diamonds }}</span>
+          </div>
+          <div class="stat-box wide">
+            <div class="achievements-info">
+              <div class="stat-label">
+                <span class="material-symbols-outlined">military_tech</span>
+                <span>ACHIEVEMENTS</span>
+              </div>
+              <span class="stat-value">{{ profile.achievementsUnlocked }} Unlocked</span>
+            </div>
+            <div class="achievement-icons">
+              <div v-for="badge in profile.recentBadges" :key="badge.icon" class="badge-circle">
+                <span class="material-symbols-outlined" :class="`badge-${badge.color}`">{{ badge.icon }}</span>
+              </div>
             </div>
           </div>
+        </section>
+
+        <!-- Settings list -->
+        <section class="settings-section">
+          <h2>ACCOUNT PREFERENCES</h2>
+
+          <button
+            v-for="item in settingsItems"
+            :key="item.title"
+            class="settings-row"
+            @click="handleSettingsClick(item)"
+          >
+            <div class="settings-left">
+              <div class="settings-icon" :class="`icon-${item.color}`">
+                <span class="material-symbols-outlined">{{ item.icon }}</span>
+              </div>
+              <div class="settings-text">
+                <span class="settings-title">{{ item.title }}</span>
+                <span class="settings-subtitle">{{ item.subtitle }}</span>
+              </div>
+            </div>
+            <span class="material-symbols-outlined chevron">chevron_right</span>
+          </button>
+
+          <button class="settings-row logout-row" @click="handleLogout">
+            <div class="settings-left">
+              <div class="settings-icon icon-error">
+                <span class="material-symbols-outlined">logout</span>
+              </div>
+              <div class="settings-text">
+                <span class="settings-title logout-title">Logout</span>
+                <span class="settings-subtitle logout-subtitle">End current session</span>
+              </div>
+            </div>
+          </button>
+        </section>
+
+        <div class="version-footer">
+          <span>IDOL SURVIVAL — BUILD {{ buildVersion }}</span>
         </div>
-      </section>
-
-      <!-- Settings list -->
-      <section class="settings-section">
-        <h2>ACCOUNT PREFERENCES</h2>
-
-        <button
-          v-for="item in settingsItems"
-          :key="item.title"
-          class="settings-row"
-          @click="handleSettingsClick(item)"
-        >
-          <div class="settings-left">
-            <div class="settings-icon" :class="`icon-${item.color}`">
-              <span class="material-symbols-outlined">{{ item.icon }}</span>
-            </div>
-            <div class="settings-text">
-              <span class="settings-title">{{ item.title }}</span>
-              <span class="settings-subtitle">{{ item.subtitle }}</span>
-            </div>
-          </div>
-          <span class="material-symbols-outlined chevron">chevron_right</span>
-        </button>
-
-        <button class="settings-row logout-row" @click="handleLogout">
-          <div class="settings-left">
-            <div class="settings-icon icon-error">
-              <span class="material-symbols-outlined">logout</span>
-            </div>
-            <div class="settings-text">
-              <span class="settings-title logout-title">Logout</span>
-              <span class="settings-subtitle logout-subtitle">End current session</span>
-            </div>
-          </div>
-        </button>
-      </section>
-
-      <div class="version-footer">
-        <span>IDOL SURVIVAL — BUILD {{ buildVersion }}</span>
-      </div>
+      </template>
     </main>
 
     <BottomNav />
@@ -122,6 +126,7 @@ import api from '../lib/api'
 import { clearSession, getUser } from '../lib/auth'
 import TopAppBar from './TopAppBar.vue'
 import BottomNav from './BottomNav.vue'
+import LoadingSpinner from './LoadingSpinner.vue'
 
 const router = useRouter()
 
@@ -138,6 +143,7 @@ const profile = ref({
   recentBadges: [],
 })
 
+const loading = ref(true)
 const buildVersion = ref('4.8.2-PRO')
 
 const settingsItems = [
@@ -193,11 +199,14 @@ async function loadProfile() {
     profile.value.avatarUrl = cachedUser.photo_url || ''
   }
 
+  loading.value = true
   try {
     const { data } = await api.get('/profile/me')
     profile.value = { ...profile.value, ...data }
   } catch (err) {
     console.error('Failed to load profile', err)
+  } finally {
+    loading.value = false
   }
 }
 

@@ -8,64 +8,68 @@
     />
 
     <main class="content">
-      <section class="wallet-card">
-        <div class="wallet-row">
-          <div class="wallet-stat">
-            <span class="material-symbols-outlined wallet-icon">diamond</span>
-            <span class="wallet-value">{{ diamonds }}</span>
-          </div>
-          <div class="wallet-divider"></div>
-          <div class="wallet-stat">
-            <span class="material-symbols-outlined wallet-icon">confirmation_number</span>
-            <span class="wallet-value">{{ voteTickets }}</span>
-          </div>
-        </div>
-      </section>
+      <LoadingSpinner v-if="loading" label="Memuat shop..." />
 
-      <section class="chips-row">
-        <button
-          v-for="chip in categories"
-          :key="chip.value"
-          class="chip"
-          :class="{ active: activeCategory === chip.value }"
-          @click="activeCategory = chip.value"
-        >
-          {{ chip.label }}
-        </button>
-      </section>
-
-      <section class="shop-grid">
-        <div v-for="item in filteredItems" :key="item.id" class="shop-card">
-          <div class="shop-icon" :class="`icon-${item.color}`">
-            <span class="material-symbols-outlined">{{ item.icon }}</span>
-          </div>
-          <div class="shop-body">
-            <h3>{{ item.title }}</h3>
-            <p>{{ item.description }}</p>
-            <div class="shop-footer">
-              <div class="shop-cost">
-                <span class="material-symbols-outlined cost-icon">diamond</span>
-                <span>{{ item.costDiamonds }}</span>
-              </div>
-              <button
-                class="buy-btn"
-                :class="{ bought: justBoughtId === item.id }"
-                :disabled="!item.inStock || diamonds < item.costDiamonds || purchasingId === item.id"
-                @click="handlePurchase(item)"
-              >
-                <span v-if="!item.inStock">SOLD OUT</span>
-                <span v-else-if="purchasingId === item.id">...</span>
-                <span v-else-if="justBoughtId === item.id">BOUGHT!</span>
-                <span v-else>BUY</span>
-              </button>
+      <template v-else>
+        <section class="wallet-card">
+          <div class="wallet-row">
+            <div class="wallet-stat">
+              <span class="material-symbols-outlined wallet-icon">diamond</span>
+              <span class="wallet-value">{{ diamonds }}</span>
+            </div>
+            <div class="wallet-divider"></div>
+            <div class="wallet-stat">
+              <span class="material-symbols-outlined wallet-icon">confirmation_number</span>
+              <span class="wallet-value">{{ voteTickets }}</span>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <p v-if="!loading && filteredItems.length === 0" class="empty-text">
-        Belum ada item di kategori ini.
-      </p>
+        <section class="chips-row">
+          <button
+            v-for="chip in categories"
+            :key="chip.value"
+            class="chip"
+            :class="{ active: activeCategory === chip.value }"
+            @click="activeCategory = chip.value"
+          >
+            {{ chip.label }}
+          </button>
+        </section>
+
+        <section class="shop-grid">
+          <div v-for="item in filteredItems" :key="item.id" class="shop-card">
+            <div class="shop-icon" :class="`icon-${item.color}`">
+              <span class="material-symbols-outlined">{{ item.icon }}</span>
+            </div>
+            <div class="shop-body">
+              <h3>{{ item.title }}</h3>
+              <p>{{ item.description }}</p>
+              <div class="shop-footer">
+                <div class="shop-cost">
+                  <span class="material-symbols-outlined cost-icon">diamond</span>
+                  <span>{{ item.costDiamonds }}</span>
+                </div>
+                <button
+                  class="buy-btn"
+                  :class="{ bought: justBoughtId === item.id }"
+                  :disabled="!item.inStock || diamonds < item.costDiamonds || purchasingId === item.id"
+                  @click="handlePurchase(item)"
+                >
+                  <span v-if="!item.inStock">SOLD OUT</span>
+                  <span v-else-if="purchasingId === item.id">...</span>
+                  <span v-else-if="justBoughtId === item.id">BOUGHT!</span>
+                  <span v-else>BUY</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <p v-if="filteredItems.length === 0" class="empty-text">
+          Belum ada item di kategori ini.
+        </p>
+      </template>
     </main>
 
     <BottomNav />
@@ -78,6 +82,7 @@ import api from '../lib/api'
 import { getUser } from '../lib/auth'
 import TopAppBar from './TopAppBar.vue'
 import BottomNav from './BottomNav.vue'
+import LoadingSpinner from './LoadingSpinner.vue'
 
 const profile = ref({ name: 'Producer', tier: 'DIAMOND SUPPORTER', level: 1, avatarUrl: '' })
 
@@ -127,6 +132,7 @@ async function loadShop() {
     profile.value.avatarUrl = cachedUser.photo_url || ''
   }
 
+  loading.value = true
   try {
     const { data } = await api.get('/shop')
     diamonds.value = data.diamonds

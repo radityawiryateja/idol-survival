@@ -12,98 +12,102 @@
     </header>
 
     <main class="content">
-      <div class="id-card holographic-sheen">
-        <!-- Card header -->
-        <div class="card-top">
-          <div class="season-block">
-            <span class="season-label">{{ idol.seasonLabel }}</span>
-            <div class="project-row">
-              <div class="project-badge">
-                <span class="material-symbols-outlined">star</span>
+      <LoadingSpinner v-if="loading" label="Memuat ID card..." />
+
+      <template v-else>
+        <div class="id-card holographic-sheen">
+          <!-- Card header -->
+          <div class="card-top">
+            <div class="season-block">
+              <span class="season-label">{{ idol.seasonLabel }}</span>
+              <div class="project-row">
+                <div class="project-badge">
+                  <span class="material-symbols-outlined">star</span>
+                </div>
+                <span class="project-name">{{ idol.projectName }}</span>
               </div>
-              <span class="project-name">{{ idol.projectName }}</span>
+            </div>
+            <div class="level-block">
+              <span class="level-label">LEVEL</span>
+              <span class="level-value">{{ idol.level }}</span>
             </div>
           </div>
-          <div class="level-block">
-            <span class="level-label">LEVEL</span>
-            <span class="level-value">{{ idol.level }}</span>
+
+          <!-- Portrait -->
+          <div class="portrait-wrap">
+            <img :src="idol.photo" :alt="idol.name" class="portrait" />
+            <div class="verified-badge">
+              <span class="material-symbols-outlined">verified</span>
+              <span>VERIFIED</span>
+            </div>
+            <div class="portrait-overlay">
+              <h2 class="idol-name">{{ idol.name }}</h2>
+              <span class="idol-code">{{ idol.code }}</span>
+            </div>
+          </div>
+
+          <!-- Meta grid -->
+          <div class="meta-grid">
+            <div class="meta-item">
+              <span class="meta-label">AGENCY</span>
+              <span class="meta-value">{{ idol.agency }}</span>
+            </div>
+            <div class="meta-item align-right">
+              <span class="meta-label">ENROLLMENT</span>
+              <span class="meta-value">{{ idol.enrollmentDate }}</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">SPECIALTY</span>
+              <span class="meta-value">{{ idol.specialty }}</span>
+            </div>
+            <div class="meta-item align-right">
+              <span class="meta-label">STATUS</span>
+              <div class="status-row">
+                <span class="status-dot"></span>
+                <span class="meta-value status-value">{{ idol.status }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Auth footer -->
+          <div class="auth-footer">
+            <div class="qr-block">
+              <div class="qr-box">
+                <img :src="idol.qrCodeUrl" alt="QR code" />
+              </div>
+              <div class="token-block">
+                <span class="token-label">Auth Token: {{ idol.authToken }}</span>
+                <div class="barcode-strip"></div>
+              </div>
+            </div>
+
+            <div class="signature-block">
+              <div class="signature-text">
+                <p class="signature-name">{{ idol.directorSignature }}</p>
+                <div class="signature-line"></div>
+                <span class="signature-caption">DIRECTOR SIGNATURE</span>
+              </div>
+              <button
+                class="sync-btn"
+                :class="{ syncing: syncState === 'syncing', synced: syncState === 'synced' }"
+                :disabled="syncState === 'syncing'"
+                @click="handleSync"
+              >
+                <span class="material-symbols-outlined" :class="{ spin: syncState === 'syncing' }">
+                  {{ syncIcon }}
+                </span>
+                {{ syncLabel }}
+              </button>
+            </div>
           </div>
         </div>
 
-        <!-- Portrait -->
-        <div class="portrait-wrap">
-          <img :src="idol.photo" :alt="idol.name" class="portrait" />
-          <div class="verified-badge">
-            <span class="material-symbols-outlined">verified</span>
-            <span>VERIFIED</span>
-          </div>
-          <div class="portrait-overlay">
-            <h2 class="idol-name">{{ idol.name }}</h2>
-            <span class="idol-code">{{ idol.code }}</span>
-          </div>
-        </div>
-
-        <!-- Meta grid -->
-        <div class="meta-grid">
-          <div class="meta-item">
-            <span class="meta-label">AGENCY</span>
-            <span class="meta-value">{{ idol.agency }}</span>
-          </div>
-          <div class="meta-item align-right">
-            <span class="meta-label">ENROLLMENT</span>
-            <span class="meta-value">{{ idol.enrollmentDate }}</span>
-          </div>
-          <div class="meta-item">
-            <span class="meta-label">SPECIALTY</span>
-            <span class="meta-value">{{ idol.specialty }}</span>
-          </div>
-          <div class="meta-item align-right">
-            <span class="meta-label">STATUS</span>
-            <div class="status-row">
-              <span class="status-dot"></span>
-              <span class="meta-value status-value">{{ idol.status }}</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Auth footer -->
-        <div class="auth-footer">
-          <div class="qr-block">
-            <div class="qr-box">
-              <img :src="idol.qrCodeUrl" alt="QR code" />
-            </div>
-            <div class="token-block">
-              <span class="token-label">Auth Token: {{ idol.authToken }}</span>
-              <div class="barcode-strip"></div>
-            </div>
-          </div>
-
-          <div class="signature-block">
-            <div class="signature-text">
-              <p class="signature-name">{{ idol.directorSignature }}</p>
-              <div class="signature-line"></div>
-              <span class="signature-caption">DIRECTOR SIGNATURE</span>
-            </div>
-            <button
-              class="sync-btn"
-              :class="{ syncing: syncState === 'syncing', synced: syncState === 'synced' }"
-              :disabled="syncState === 'syncing'"
-              @click="handleSync"
-            >
-              <span class="material-symbols-outlined" :class="{ spin: syncState === 'syncing' }">
-                {{ syncIcon }}
-              </span>
-              {{ syncLabel }}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <p class="legend-text">
-        This digital identification is property of the Survival Program. Unauthorized
-        replication or transfer of this token will result in immediate disqualification
-        and removal from the training facility.
-      </p>
+        <p class="legend-text">
+          This digital identification is property of the Survival Program. Unauthorized
+          replication or transfer of this token will result in immediate disqualification
+          and removal from the training facility.
+        </p>
+      </template>
     </main>
 
     <BottomNav />
@@ -116,11 +120,13 @@ import { useRoute, useRouter } from 'vue-router'
 import api from '../lib/api'
 import { getUser } from '../lib/auth'
 import BottomNav from './BottomNav.vue'
+import LoadingSpinner from './LoadingSpinner.vue'
 
 const route = useRoute()
 const router = useRouter()
 
 const profile = ref({ name: 'Producer', avatarUrl: '' })
+const loading = ref(true)
 
 const idol = ref({
   seasonLabel: '',
@@ -182,11 +188,14 @@ async function loadIdCard() {
     profile.value.avatarUrl = cachedUser.photo_url || ''
   }
 
+  loading.value = true
   try {
     const { data } = await api.get(`/idols/${route.params.id}/card`)
     idol.value = data
   } catch (err) {
     console.error('Failed to load ID card', err)
+  } finally {
+    loading.value = false
   }
 }
 

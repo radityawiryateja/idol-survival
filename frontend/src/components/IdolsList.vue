@@ -48,86 +48,90 @@
         </div>
       </section>
 
-      <!-- Top 3 premium cards -->
-      <section class="idol-list">
-        <div
-          v-for="idol in topThree"
-          :key="idol.id"
-          class="idol-card premium"
-          :class="`premium-${idol.rank}`"
-        >
-          <div class="card-row">
-            <router-link :to="`/idols/${idol.id}/card`" class="portrait">
-              <img :src="idol.photo || idol.photo_url" :alt="idol.name" />
-              <span class="rank-badge" :class="`rank-${idol.rank}`">RANK {{ idol.rank }}</span>
-            </router-link>
-            <div class="info">
-              <div class="info-top">
-                <div>
-                  <h3 class="idol-name">{{ idol.name }}</h3>
-                  <p class="agency" :class="`agency-${idol.rank}`">{{ idol.agency }}</p>
-                  <router-link :to="`/idols/${idol.id}/card`" class="idcard-link">View ID Card →</router-link>
-                </div>
-                <button
-                  class="fav-btn"
-                  :class="{ active: idol.favorited }"
-                  @click="toggleFavorite(idol)"
-                  aria-label="Toggle favorite"
-                >
-                  <span class="material-symbols-outlined">favorite</span>
-                </button>
-              </div>
+      <LoadingSpinner v-if="loading" label="Memuat idols..." />
 
-              <div class="metrics">
-                <div class="metric">
-                  <p class="metric-label">TOTAL VOTES</p>
-                  <p class="metric-value" :class="`text-${idol.rank}`">{{ idol.votes }}</p>
+      <template v-else>
+        <!-- Top 3 premium cards -->
+        <section class="idol-list">
+          <div
+            v-for="idol in topThree"
+            :key="idol.id"
+            class="idol-card premium"
+            :class="`premium-${idol.rank}`"
+          >
+            <div class="card-row">
+              <router-link :to="`/idols/${idol.id}/card`" class="portrait">
+                <img :src="idol.photo || idol.photo_url" :alt="idol.name" />
+                <span class="rank-badge" :class="`rank-${idol.rank}`">RANK {{ idol.rank }}</span>
+              </router-link>
+              <div class="info">
+                <div class="info-top">
+                  <div>
+                    <h3 class="idol-name">{{ idol.name }}</h3>
+                    <p class="agency" :class="`agency-${idol.rank}`">{{ idol.agency }}</p>
+                    <router-link :to="`/idols/${idol.id}/card`" class="idcard-link">View ID Card →</router-link>
+                  </div>
+                  <button
+                    class="fav-btn"
+                    :class="{ active: idol.favorited }"
+                    @click="toggleFavorite(idol)"
+                    aria-label="Toggle favorite"
+                  >
+                    <span class="material-symbols-outlined">favorite</span>
+                  </button>
                 </div>
-                <div class="divider"></div>
-                <div class="metric">
-                  <p class="metric-label">FOLLOWERS</p>
-                  <p class="metric-value">{{ idol.followers }}</p>
-                </div>
-              </div>
 
-              <div class="sparkline-row">
-                <svg class="sparkline" viewBox="0 0 100 40">
-                  <path :d="idol.sparkline" fill="none" :stroke="rankColor(idol.rank)" stroke-width="2" />
-                </svg>
-                <div class="popularity">
-                  <span class="popularity-label">POPULARITY</span>
-                  <span class="popularity-value" :class="`text-${idol.rank}`">{{ idol.popularity }}%</span>
+                <div class="metrics">
+                  <div class="metric">
+                    <p class="metric-label">TOTAL VOTES</p>
+                    <p class="metric-value" :class="`text-${idol.rank}`">{{ idol.votes }}</p>
+                  </div>
+                  <div class="divider"></div>
+                  <div class="metric">
+                    <p class="metric-label">FOLLOWERS</p>
+                    <p class="metric-value">{{ idol.followers }}</p>
+                  </div>
+                </div>
+
+                <div class="sparkline-row">
+                  <svg class="sparkline" viewBox="0 0 100 40">
+                    <path :d="idol.sparkline" fill="none" :stroke="rankColor(idol.rank)" stroke-width="2" />
+                  </svg>
+                  <div class="popularity">
+                    <span class="popularity-label">POPULARITY</span>
+                    <span class="popularity-value" :class="`text-${idol.rank}`">{{ idol.popularity }}%</span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <button class="vote-btn" :class="`vote-${idol.rank}`" @click="openVoteModal(idol)">
-            Cast Vote
-          </button>
-        </div>
-      </section>
+            <button class="vote-btn" :class="`vote-${idol.rank}`" @click="openVoteModal(idol)">
+              Cast Vote
+            </button>
+          </div>
+        </section>
 
-      <!-- Remaining ranks as compact list items -->
-      <section class="idol-list-compact">
-        <div v-for="idol in restOfList" :key="idol.id" class="idol-row">
-          <span class="row-rank">{{ String(idol.rank).padStart(2, '0') }}</span>
-          <router-link :to="`/idols/${idol.id}/card`" class="row-avatar">
-            <img :src="idol.photo || idol.photo_url" :alt="idol.name" />
-          </router-link>
-          <div class="row-info">
-            <h4>{{ idol.name }}</h4>
-            <p>{{ idol.agency }}</p>
+        <!-- Remaining ranks as compact list items -->
+        <section class="idol-list-compact">
+          <div v-for="idol in restOfList" :key="idol.id" class="idol-row">
+            <span class="row-rank">{{ String(idol.rank).padStart(2, '0') }}</span>
+            <router-link :to="`/idols/${idol.id}/card`" class="row-avatar">
+              <img :src="idol.photo || idol.photo_url" :alt="idol.name" />
+            </router-link>
+            <div class="row-info">
+              <h4>{{ idol.name }}</h4>
+              <p>{{ idol.agency }}</p>
+            </div>
+            <div class="row-votes">
+              <p class="row-votes-value">{{ idol.votes }}</p>
+              <p class="row-votes-label">VOTES</p>
+            </div>
+            <button class="row-vote-btn" @click="openVoteModal(idol)" aria-label="Vote">
+              <span class="material-symbols-outlined">how_to_reg</span>
+            </button>
           </div>
-          <div class="row-votes">
-            <p class="row-votes-value">{{ idol.votes }}</p>
-            <p class="row-votes-label">VOTES</p>
-          </div>
-          <button class="row-vote-btn" @click="openVoteModal(idol)" aria-label="Vote">
-            <span class="material-symbols-outlined">how_to_reg</span>
-          </button>
-        </div>
-      </section>
+        </section>
+      </template>
     </main>
 
     <BottomNav />
@@ -148,6 +152,7 @@ import { getUser } from '../lib/auth'
 import TopAppBar from './TopAppBar.vue'
 import BottomNav from './BottomNav.vue'
 import VoteModal from './VoteModal.vue'
+import LoadingSpinner from './LoadingSpinner.vue'
 
 const profile = ref({ name: 'Producer', tier: 'DIAMOND SUPPORTER', level: 1, avatarUrl: '' })
 
@@ -159,6 +164,7 @@ const activeChip = ref('ALL')
 const totalContestants = ref(0)
 const walletBalance = ref(0)
 const activeVoteIdol = ref(null)
+const loading = ref(true)
 
 const idols = ref([])
 
@@ -208,6 +214,7 @@ async function loadIdols() {
     profile.value.avatarUrl = cachedUser.photo_url || ''
   }
 
+  loading.value = true
   try {
     const { data } = await api.get('/idols', {
       params: { season: selectedSeason.value, filter: activeChip.value, q: searchQuery.value },
@@ -216,6 +223,8 @@ async function loadIdols() {
     totalContestants.value = data.total
   } catch (err) {
     console.error('Failed to load idols', err)
+  } finally {
+    loading.value = false
   }
   try {
     const profileRes = await api.get('/profile/me')

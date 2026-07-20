@@ -14,25 +14,29 @@
           <p>Pesan pribadi dari idol favoritmu.</p>
         </section>
 
-        <section class="room-list">
-          <button
-            v-for="room in rooms"
-            :key="room.idolId"
-            class="room-row"
-            @click="openRoom(room)"
-          >
-            <div class="room-avatar">
-              <img :src="room.photo" :alt="room.name" />
-            </div>
-            <div class="room-info">
-              <h3>{{ room.name }}</h3>
-              <p>{{ room.lastMessagePreview }}</p>
-            </div>
-            <span v-if="room.lastMessageAt" class="room-time">{{ formatTime(room.lastMessageAt) }}</span>
-          </button>
-        </section>
+        <LoadingSpinner v-if="loadingRooms" label="Memuat percakapan..." />
 
-        <p v-if="!loadingRooms && rooms.length === 0" class="empty-text">Belum ada idol untuk diajak ngobrol.</p>
+        <template v-else>
+          <section class="room-list">
+            <button
+              v-for="room in rooms"
+              :key="room.idolId"
+              class="room-row"
+              @click="openRoom(room)"
+            >
+              <div class="room-avatar">
+                <img :src="room.photo" :alt="room.name" />
+              </div>
+              <div class="room-info">
+                <h3>{{ room.name }}</h3>
+                <p v-html="renderEmojiText(room.lastMessagePreview)"></p>
+              </div>
+              <span v-if="room.lastMessageAt" class="room-time">{{ formatTime(room.lastMessageAt) }}</span>
+            </button>
+          </section>
+
+          <p v-if="rooms.length === 0" class="empty-text">Belum ada idol untuk diajak ngobrol.</p>
+        </template>
       </main>
       <BottomNav />
     </template>
@@ -51,20 +55,66 @@
       </header>
 
       <main class="chat-messages" ref="messagesEl">
-        <div
-          v-for="msg in messages"
-          :key="msg.id"
-          class="bubble-row"
-          :class="{ mine: msg.sender === 'user' }"
-        >
-          <img v-if="msg.sender === 'idol'" :src="activeRoom.photo" class="bubble-avatar" />
-          <div class="bubble" :class="{ mine: msg.sender === 'user', broadcast: msg.scope === 'broadcast' }">
-            <img v-if="msg.mediaType === 'photo'" :src="msg.mediaUrl" class="bubble-media" />
-            <p v-if="msg.content">{{ msg.content }}</p>
-            <span class="bubble-time">{{ formatTime(msg.createdAt) }}</span>
+        <LoadingSpinner v-if="loadingMessages" label="Memuat pesan..." />
+
+        <template v-else>
+          <div
+            v-for="msg in messages"
+            :key="msg.id"
+            class="bubble-row"
+            :class="{ mine: msg.sender === 'user' }"
+          >
+            <img v-if="msg.sender === 'idol'" :src="activeRoom.photo" class="bubble-avatar" />
+            <div
+              class="bubble"
+              :class="[
+                { mine: msg.sender === 'user', broadcast: msg.scope === 'broadcast' },
+                `media-${msg.mediaType}`,
+              ]"
+            >
+              <!-- Photo -->
+              <img v-if="msg.mediaType === 'photo'" :src="msg.mediaUrl" class="bubble-media" loading="lazy" />
+
+              <!-- Video -->
+              <video
+                v-else-if="msg.mediaType === 'video'"
+                :src="msg.mediaUrl"
+                class="bubble-media"
+                controls
+                playsinline
+                preload="metadata"
+              ></video>
+
+              <!-- Video note / "Live Motion" -- Telegram's round self-recorded clip -->
+              <div v-else-if="msg.mediaType === 'video_note'" class="bubble-video-note">
+                <video
+                  :src="msg.mediaUrl"
+                  class="video-note-media"
+                  autoplay
+                  muted
+                  loop
+                  playsinline
+                ></video>
+                <span class="video-note-badge">
+                  <span class="material-symbols-outlined">motion_photos_on</span>
+                  Live
+                </span>
+              </div>
+
+              <!-- Voice note / audio -->
+              <div v-else-if="msg.mediaType === 'voice' || msg.mediaType === 'audio'" class="bubble-audio-wrap">
+                <span class="material-symbols-outlined audio-icon">
+                  {{ msg.mediaType === 'voice' ? 'mic' : 'music_note' }}
+                </span>
+                <audio :src="msg.mediaUrl" class="bubble-audio" controls preload="metadata"></audio>
+              </div>
+
+              <p v-if="msg.content" v-html="renderEmojiText(msg.content)"></p>
+              <span class="bubble-time">{{ formatTime(msg.createdAt) }}</span>
+            </div>
           </div>
-        </div>
-        <p v-if="messages.length === 0" class="empty-text">Belum ada pesan. Mulai obrolan!</p>
+          <p v-if="messages.length === 0" class="empty-text">Belum ada pesan. Mulai obrolan!</p>
+        </template>
       </main>
 
       <form class="chat-input-bar" @submit.prevent="handleSend">
@@ -87,9 +137,11 @@
 import { nextTick, onMounted, onUnmounted, ref } from 'vue'
 import api from '../lib/api'
 import { getUser } from '../lib/auth'
+import { renderEmojiText } from '../lib/emoji'
 import { supabase } from '../lib/supabase'
 import TopAppBar from './TopAppBar.vue'
 import BottomNav from './BottomNav.vue'
+import LoadingSpinner from './LoadingSpinner.vue'
 
 const profile = ref({ name: 'Producer', tier: 'DIAMOND SUPPORTER', level: 1, avatarUrl: '' })
 
@@ -97,6 +149,7 @@ const rooms = ref([])
 const loadingRooms = ref(true)
 const activeRoom = ref(null)
 const messages = ref([])
+const loadingMessages = ref(true)
 const draft = ref('')
 const sending = ref(false)
 const messagesEl = ref(null)
@@ -129,13 +182,16 @@ async function loadRooms() {
   }
 }
 
-async function loadMessages(idolId) {
+async function loadMessages(idolId, { showSpinner = false } = {}) {
+  if (showSpinner) loadingMessages.value = true
   try {
     const { data } = await api.get(`/talks/${idolId}/messages`)
     messages.value = data.messages
     scrollToBottom()
   } catch (err) {
     console.error('Failed to load messages', err)
+  } finally {
+    if (showSpinner) loadingMessages.value = false
   }
 }
 
@@ -179,7 +235,7 @@ function stopLiveUpdates() {
 
 async function openRoom(room) {
   activeRoom.value = room
-  await loadMessages(room.idolId)
+  await loadMessages(room.idolId, { showSpinner: true })
   subscribeToBroadcasts(room.idolId)
   startPolling(room.idolId)
 }
@@ -414,6 +470,13 @@ onUnmounted(stopLiveUpdates)
   border-color: rgba(181, 196, 255, 0.4);
   box-shadow: 0 0 12px rgba(79, 125, 255, 0.15);
 }
+/* Media bubbles get a touch more breathing room and no padding around
+   the media itself, so images/video fill the bubble edge-to-edge. */
+.bubble.media-photo,
+.bubble.media-video {
+  padding: 6px;
+  max-width: 80%;
+}
 .bubble p {
   margin: 0;
   font-size: 14px;
@@ -421,12 +484,69 @@ onUnmounted(stopLiveUpdates)
   color: inherit;
 }
 .bubble:not(.mine) p { color: #dce1fc; }
+.bubble.media-photo p,
+.bubble.media-video p {
+  margin: 8px 6px 0;
+}
 .bubble-media {
   width: 100%;
+  max-height: 320px;
   border-radius: 10px;
-  margin-bottom: 6px;
   display: block;
+  background: #05070f;
+  object-fit: cover;
 }
+
+/* Video note / "Live Motion" -- circular auto-playing clip, Telegram-style */
+.bubble-video-note {
+  position: relative;
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid rgba(181, 196, 255, 0.4);
+  box-shadow: 0 0 20px rgba(79, 125, 255, 0.25);
+}
+.video-note-media {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.video-note-badge {
+  position: absolute;
+  bottom: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+.video-note-badge .material-symbols-outlined { font-size: 12px; }
+
+/* Voice / audio */
+.bubble-audio-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 200px;
+}
+.audio-icon {
+  color: #b5c4ff;
+  flex-shrink: 0;
+}
+.bubble.mine .audio-icon { color: #00133d; }
+.bubble-audio {
+  flex: 1;
+  height: 32px;
+}
+
 .bubble-time {
   display: block;
   font-size: 10px;

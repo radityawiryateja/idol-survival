@@ -8,62 +8,66 @@
     />
 
     <main class="content">
-      <section class="balance-card">
-        <p class="balance-label">YOUR BALANCE</p>
-        <div class="balance-value-row">
-          <span class="material-symbols-outlined balance-icon">diamond</span>
-          <span class="balance-value">{{ diamonds }}</span>
-        </div>
-        <div class="balance-hint">
-          <span class="material-symbols-outlined">info</span>
-          <span>Selesaikan misi harian untuk dapat diamond</span>
-        </div>
-      </section>
+      <LoadingSpinner v-if="loading" label="Memuat rewards..." />
 
-      <section class="chips-row">
-        <button
-          v-for="chip in categories"
-          :key="chip.value"
-          class="chip"
-          :class="{ active: activeCategory === chip.value }"
-          @click="activeCategory = chip.value"
-        >
-          {{ chip.label }}
-        </button>
-      </section>
-
-      <section class="rewards-grid">
-        <div v-for="reward in filteredRewards" :key="reward.id" class="reward-card">
-          <div class="reward-icon" :class="`icon-${reward.color}`">
-            <span class="material-symbols-outlined">{{ reward.icon }}</span>
+      <template v-else>
+        <section class="balance-card">
+          <p class="balance-label">YOUR BALANCE</p>
+          <div class="balance-value-row">
+            <span class="material-symbols-outlined balance-icon">diamond</span>
+            <span class="balance-value">{{ diamonds }}</span>
           </div>
-          <div class="reward-body">
-            <h3>{{ reward.title }}</h3>
-            <p>{{ reward.description }}</p>
-            <div class="reward-footer">
-              <div class="reward-cost">
-                <span class="material-symbols-outlined cost-icon">diamond</span>
-                <span>{{ reward.costDiamonds }}</span>
+          <div class="balance-hint">
+            <span class="material-symbols-outlined">info</span>
+            <span>Selesaikan misi harian untuk dapat diamond</span>
+          </div>
+        </section>
+
+        <section class="chips-row">
+          <button
+            v-for="chip in categories"
+            :key="chip.value"
+            class="chip"
+            :class="{ active: activeCategory === chip.value }"
+            @click="activeCategory = chip.value"
+          >
+            {{ chip.label }}
+          </button>
+        </section>
+
+        <section class="rewards-grid">
+          <div v-for="reward in filteredRewards" :key="reward.id" class="reward-card">
+            <div class="reward-icon" :class="`icon-${reward.color}`">
+              <span class="material-symbols-outlined">{{ reward.icon }}</span>
+            </div>
+            <div class="reward-body">
+              <h3>{{ reward.title }}</h3>
+              <p>{{ reward.description }}</p>
+              <div class="reward-footer">
+                <div class="reward-cost">
+                  <span class="material-symbols-outlined cost-icon">diamond</span>
+                  <span>{{ reward.costDiamonds }}</span>
+                </div>
+                <button
+                  class="redeem-btn"
+                  :class="{ redeemed: redeemedIds.has(reward.id) }"
+                  :disabled="!reward.inStock || diamonds < reward.costDiamonds || redeemingId === reward.id"
+                  @click="handleRedeem(reward)"
+                >
+                  <span v-if="!reward.inStock">SOLD OUT</span>
+                  <span v-else-if="redeemedIds.has(reward.id)">REDEEMED</span>
+                  <span v-else-if="redeemingId === reward.id">...</span>
+                  <span v-else>REDEEM</span>
+                </button>
               </div>
-              <button
-                class="redeem-btn"
-                :class="{ redeemed: redeemedIds.has(reward.id) }"
-                :disabled="!reward.inStock || diamonds < reward.costDiamonds || redeemingId === reward.id"
-                @click="handleRedeem(reward)"
-              >
-                <span v-if="!reward.inStock">SOLD OUT</span>
-                <span v-else-if="redeemedIds.has(reward.id)">REDEEMED</span>
-                <span v-else-if="redeemingId === reward.id">...</span>
-                <span v-else>REDEEM</span>
-              </button>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <p v-if="!loading && filteredRewards.length === 0" class="empty-text">
-        Belum ada reward di kategori ini.
-      </p>
+        <p v-if="filteredRewards.length === 0" class="empty-text">
+          Belum ada reward di kategori ini.
+        </p>
+      </template>
     </main>
 
     <BottomNav />
@@ -76,6 +80,7 @@ import api from '../lib/api'
 import { getUser } from '../lib/auth'
 import TopAppBar from './TopAppBar.vue'
 import BottomNav from './BottomNav.vue'
+import LoadingSpinner from './LoadingSpinner.vue'
 
 const profile = ref({ name: 'Producer', tier: 'DIAMOND SUPPORTER', level: 1, avatarUrl: '' })
 
@@ -121,6 +126,7 @@ async function loadRewards() {
     profile.value.avatarUrl = cachedUser.photo_url || ''
   }
 
+  loading.value = true
   try {
     const { data } = await api.get('/rewards')
     diamonds.value = data.diamonds

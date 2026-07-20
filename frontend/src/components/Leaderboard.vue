@@ -13,99 +13,103 @@
         <p>Real-time survival statistics across all active sectors.</p>
       </section>
 
-      <!-- Podium -->
-      <section class="podium">
-        <!-- Rank 2 -->
-        <div class="podium-slot slot-2">
-          <div class="podium-portrait float" style="animation-delay: 0.5s">
-            <div class="ring ring-2">
-              <img :src="podium[1]?.photo" :alt="podium[1]?.name" />
-            </div>
-            <span class="rank-tag tag-2">#2</span>
-          </div>
-          <div class="podium-base base-2">
-            <span class="podium-name">{{ podium[1]?.name }}</span>
-            <span class="podium-votes votes-2">{{ podium[1]?.votes }}</span>
-          </div>
-        </div>
+      <LoadingSpinner v-if="loading" label="Memuat ranking..." />
 
-        <!-- Rank 1 -->
-        <div class="podium-slot slot-1">
-          <div class="podium-portrait float">
-            <span class="crown material-symbols-outlined">workspace_premium</span>
-            <div class="ring ring-1">
-              <img :src="podium[0]?.photo" :alt="podium[0]?.name" />
+      <template v-else>
+        <!-- Podium -->
+        <section class="podium">
+          <!-- Rank 2 -->
+          <div class="podium-slot slot-2">
+            <div class="podium-portrait float" style="animation-delay: 0.5s">
+              <div class="ring ring-2">
+                <img :src="podium[1]?.photo" :alt="podium[1]?.name" />
+              </div>
+              <span class="rank-tag tag-2">#2</span>
             </div>
-            <span class="rank-tag tag-1">#1</span>
-          </div>
-          <div class="podium-base base-1">
-            <span class="podium-name name-1">{{ podium[0]?.name }}</span>
-            <span class="podium-votes votes-1">{{ podium[0]?.votes }}</span>
-            <div class="trend">
-              <span class="material-symbols-outlined trend-icon">trending_up</span>
-              <span class="trend-value">{{ podium[0]?.trend }}</span>
+            <div class="podium-base base-2">
+              <span class="podium-name">{{ podium[1]?.name }}</span>
+              <span class="podium-votes votes-2">{{ podium[1]?.votes }}</span>
             </div>
           </div>
-        </div>
 
-        <!-- Rank 3 -->
-        <div class="podium-slot slot-3">
-          <div class="podium-portrait float" style="animation-delay: 1s">
-            <div class="ring ring-3">
-              <img :src="podium[2]?.photo" :alt="podium[2]?.name" />
+          <!-- Rank 1 -->
+          <div class="podium-slot slot-1">
+            <div class="podium-portrait float">
+              <span class="crown material-symbols-outlined">workspace_premium</span>
+              <div class="ring ring-1">
+                <img :src="podium[0]?.photo" :alt="podium[0]?.name" />
+              </div>
+              <span class="rank-tag tag-1">#1</span>
             </div>
-            <span class="rank-tag tag-3">#3</span>
+            <div class="podium-base base-1">
+              <span class="podium-name name-1">{{ podium[0]?.name }}</span>
+              <span class="podium-votes votes-1">{{ podium[0]?.votes }}</span>
+              <div class="trend">
+                <span class="material-symbols-outlined trend-icon">trending_up</span>
+                <span class="trend-value">{{ podium[0]?.trend }}</span>
+              </div>
+            </div>
           </div>
-          <div class="podium-base base-3">
-            <span class="podium-name">{{ podium[2]?.name }}</span>
-            <span class="podium-votes votes-3">{{ podium[2]?.votes }}</span>
-          </div>
-        </div>
-      </section>
 
-      <!-- Ranking list (4+) -->
-      <section class="ranking-list">
-        <div class="list-head">
-          <span>RANKING DATA</span>
-          <span>WEEKLY TREND</span>
-        </div>
-
-        <div v-for="entry in restOfRanking" :key="entry.id" class="ranking-row">
-          <span class="row-position">{{ String(entry.rank).padStart(2, '0') }}</span>
-          <div class="row-avatar">
-            <img :src="entry.photo" :alt="entry.name" />
+          <!-- Rank 3 -->
+          <div class="podium-slot slot-3">
+            <div class="podium-portrait float" style="animation-delay: 1s">
+              <div class="ring ring-3">
+                <img :src="podium[2]?.photo" :alt="podium[2]?.name" />
+              </div>
+              <span class="rank-tag tag-3">#3</span>
+            </div>
+            <div class="podium-base base-3">
+              <span class="podium-name">{{ podium[2]?.name }}</span>
+              <span class="podium-votes votes-3">{{ podium[2]?.votes }}</span>
+            </div>
           </div>
-          <div class="row-info">
-            <h3>{{ entry.name }}</h3>
-            <div class="row-meta">
-              <span class="row-votes">{{ entry.votesFull }} Votes</span>
-              <span class="row-trend" :class="trendClass(entry.trendDirection)">
-                <span class="material-symbols-outlined trend-arrow">
-                  {{ trendIcon(entry.trendDirection) }}
+        </section>
+
+        <!-- Ranking list (4+) -->
+        <section class="ranking-list">
+          <div class="list-head">
+            <span>RANKING DATA</span>
+            <span>WEEKLY TREND</span>
+          </div>
+
+          <div v-for="entry in restOfRanking" :key="entry.id" class="ranking-row">
+            <span class="row-position">{{ String(entry.rank).padStart(2, '0') }}</span>
+            <div class="row-avatar">
+              <img :src="entry.photo" :alt="entry.name" />
+            </div>
+            <div class="row-info">
+              <h3>{{ entry.name }}</h3>
+              <div class="row-meta">
+                <span class="row-votes">{{ entry.votesFull }} Votes</span>
+                <span class="row-trend" :class="trendClass(entry.trendDirection)">
+                  <span class="material-symbols-outlined trend-arrow">
+                    {{ trendIcon(entry.trendDirection) }}
+                  </span>
+                  {{ entry.trendPercent }}%
                 </span>
-                {{ entry.trendPercent }}%
-              </span>
+              </div>
+            </div>
+            <div class="row-sparkline">
+              <svg viewBox="0 0 100 40" :class="trendClass(entry.trendDirection)">
+                <path :d="entry.sparkline" fill="none" stroke="currentColor" stroke-width="2" />
+              </svg>
             </div>
           </div>
-          <div class="row-sparkline">
-            <svg viewBox="0 0 100 40" :class="trendClass(entry.trendDirection)">
-              <path :d="entry.sparkline" fill="none" stroke="currentColor" stroke-width="2" />
-            </svg>
-          </div>
-        </div>
-      </section>
+        </section>
 
-      <!-- Weekly prestige meter -->
-      <section class="prestige-card">
-        <div class="prestige-head">
-          <h4>Weekly Prestige Cap</h4>
-          <span class="prestige-percent">{{ prestige.percent }}%</span>
-        </div>
-        <div class="prestige-track">
-          <div class="prestige-fill" :style="{ width: prestige.percent + '%' }"></div>
-        </div>
-        <p class="prestige-note">{{ prestige.note }}</p>
-      </section>
+        <!-- Weekly prestige meter -->
+        <section class="prestige-card">
+          <div class="prestige-head">
+            <h4>Weekly Prestige Cap</h4>
+            <span class="prestige-percent">{{ prestige.percent }}%</span>
+          </div>
+          <div class="prestige-track">
+            <div class="prestige-fill" :style="{ width: prestige.percent + '%' }"></div>
+          </div>
+          <p class="prestige-note">{{ prestige.note }}</p>
+        </section>
+      </template>
     </main>
 
     <BottomNav />
@@ -118,8 +122,10 @@ import api from '../lib/api'
 import { getUser } from '../lib/auth'
 import TopAppBar from './TopAppBar.vue'
 import BottomNav from './BottomNav.vue'
+import LoadingSpinner from './LoadingSpinner.vue'
 
 const profile = ref({ name: 'Producer', tier: 'DIAMOND SUPPORTER', level: 1, avatarUrl: '' })
+const loading = ref(true)
 
 // ranking = full ordered list from the backend; podium = first 3, restOfRanking = rank 4+
 const ranking = ref([])
@@ -147,12 +153,15 @@ async function loadLeaderboard() {
     profile.value.avatarUrl = cachedUser.photo_url || ''
   }
 
+  loading.value = true
   try {
     const { data } = await api.get('/leaderboard')
     ranking.value = data.ranking
     prestige.value = data.prestige
   } catch (err) {
     console.error('Failed to load leaderboard', err)
+  } finally {
+    loading.value = false
   }
 }
 
