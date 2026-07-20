@@ -1,17 +1,13 @@
-"""
-aiogram bot that runs concurrently with the FastAPI server via asyncio
-background tasks (see main.py's lifespan handler). It doesn't block or
-share a thread with the HTTP server.
-"""
 import asyncio
 import logging
+import uuid
 
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import CommandStart
 from aiogram.types import Message
 
 from app.config import settings
-from app.services.supabase_client import supabase
+from app.services import supabase_client
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -46,8 +42,9 @@ async def stop_bot() -> None:
         _polling_task.cancel()
     await bot.session.close()
 
+
 async def _find_idol_by_admin_chat(chat_id: int):
-    result = supabase.table("idols").select("*").eq("telegram_admin_chat_id", chat_id).execute()
+    result = await supabase_client.supabase.table("idols").select("*").eq("telegram_admin_chat_id", chat_id).execute()
     return result.data[0] if result.data else None
 
 
@@ -62,17 +59,16 @@ async def handle_idol_private_reply(message: Message):
         return
 
     original = (
-        supabase.table("idol_private_messages")
+        await supabase_client.supabase.table("idol_private_messages")
         .select("producer_id")
         .eq("telegram_message_id", message.reply_to_message.message_id)
         .eq("sender", "user")
         .execute()
-        .data
-    )
+    ).data
     if not original:
         return  # reply ke pesan yang bukan forward-an user, abaikan
 
-    supabase.table("idol_private_messages").insert(
+    await supabase_client.supabase.table("idol_private_messages").insert(
         {
             "idol_id": idol["id"],
             "producer_id": original[0]["producer_id"],
@@ -83,20 +79,36 @@ async def handle_idol_private_reply(message: Message):
     ).execute()
 
 
+async def _upload_photo_to_storage(file_id: str) -> str:
+    file = await bot.get_file(file_id)
+    file_bytes_io = await bot.download_file(file.file_path)
+    file_bytes = file_bytes_io.read()
+
+    path = f"broadcasts/{uuid.uuid4()}.jpg"
+    await supabase_client.supabase.storage.from_("idol-media").upload(
+        path, file_bytes, {"content-type": "image/jpeg"}
+    )
+    
+    public_url = await supabase_client.supabase.storage.from_("idol-media").get_public_url(path)
+    
+    return public_url
+
+
 @dp.message(F.chat.type.in_({"private", "group", "supergroup"}))
 async def handle_idol_broadcast(message: Message):
-    """
-    Pesan biasa (bukan reply) dari admin chat idol -> broadcast ke semua user.
-    """
     idol = await _find_idol_by_admin_chat(message.chat.id)
     if not idol:
-        return  # bukan admin chat idol manapun
+        return
 
     if message.photo:
         photo = message.photo[-1]
-        file = await bot.get_file(photo.file_id)
-        media_url = f"https://api.telegram.org/file/bot{settings.TELEGRAM_BOT_TOKEN}/{file.file_path}"
-        supabase.table("idol_broadcasts").insert(
+        try:
+            media_url = await _upload_photo_to_storage(photo.file_id)
+        except Exception as exc:
+            logger.error(f"Failed to upload broadcast photo: {exc}")
+            return
+
+        await supabase_client.supabase.table("idol_broadcasts").insert(
             {
                 "idol_id": idol["id"],
                 "content": message.caption,
@@ -107,10 +119,10 @@ async def handle_idol_broadcast(message: Message):
         return
 
     if message.text:
-        supabase.table("idol_broadcasts").insert(
+        await supabase_client.supabase.table("idol_broadcasts").insert(
             {"idol_id": idol["id"], "content": message.text, "media_type": "text"}
         ).execute()
-
+        
 
 async def forward_reply_to_idol(idol_admin_chat_id: int, text: str) -> int | None:
     """Dipanggil dari FastAPI saat user kirim reply, forward ke chat admin idol."""
