@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.bot import start_bot, stop_bot
 from app.config import settings
 from app.services.supabase_client import init_supabase
-from app.routers import auth, protected, idols, leaderboard, tasks, dashboard, rewards, shop, talks
+from app.routers import auth, protected, idols, leaderboard, tasks, dashboard, rewards, shop, talks, events
 
 
 @asynccontextmanager
@@ -41,6 +41,7 @@ app.include_router(dashboard.router, prefix="/api", tags=["dashboard"])
 app.include_router(rewards.router, prefix="/api", tags=["rewards"])
 app.include_router(shop.router, prefix="/api", tags=["shop"])
 app.include_router(talks.router, prefix="/api", tags=["talks"])
+app.include_router(events.router, prefix="/api", tags=["events"])
 
 
 @app.get("/")
