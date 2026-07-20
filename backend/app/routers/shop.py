@@ -1,30 +1,22 @@
+import asyncio
+
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.routers.protected import get_current_user
-from app.services.supabase_client import supabase
+from app.services import supabase_client
 
 router = APIRouter()
 
 
 @router.get("/shop")
 async def list_shop_items(current_user: dict = Depends(get_current_user)):
-    items = (
-        supabase.table("shop_items")
-        .select("*")
-        .eq("active", True)
-        .order("sort_order")
-        .execute()
-        .data
+    items_result, producer_result = await asyncio.gather(
+        supabase_client.supabase.table("shop_items").select("*").eq("active", True).order("sort_order").execute(),
+        supabase_client.supabase.table("producers").select("diamonds, vote_tickets").eq("id", current_user["sub"]).execute(),
     )
 
-    producer_result = (
-        supabase.table("producers")
-        .select("diamonds, vote_tickets")
-        .eq("id", current_user["sub"])
-        .execute()
-        .data
-    )
-    producer = producer_result[0] if producer_result else {"diamonds": 0, "vote_tickets": 0}
+    items = items_result.data
+    producer = producer_result.data[0] if producer_result.data else {"diamonds": 0, "vote_tickets": 0}
 
     return {
         "diamonds": producer["diamonds"],
@@ -48,7 +40,7 @@ async def list_shop_items(current_user: dict = Depends(get_current_user)):
 @router.post("/shop/{item_id}/purchase")
 async def purchase_shop_item(item_id: str, current_user: dict = Depends(get_current_user)):
     try:
-        result = supabase.rpc(
+        result = await supabase_client.supabase.rpc(
             "purchase_shop_item_rpc",
             {"p_producer_id": current_user["sub"], "p_item_id": item_id},
         ).execute()
