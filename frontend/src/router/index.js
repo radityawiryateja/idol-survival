@@ -12,6 +12,7 @@ import RewardsPage from '../components/RewardsPage.vue'
 import ShopPage from '../components/ShopPage.vue'
 import TalksPage from '../components/TalksPage.vue'
 import EventsPage from '../components/EventsPage.vue'
+import VotePage from '../components/VotePage.vue'
 
 const routes = [
   { path: '/login', name: 'login', component: LoginPage },
@@ -26,6 +27,7 @@ const routes = [
   { path: '/shop', name: 'shop', component: ShopPage },
   { path: '/talk', name: 'talk', component: TalksPage },
   { path: '/events', name: 'events', component: EventsPage },
+  { path: '/vote', name: 'vote', component: VotePage },
   { path: '/:pathMatch(.*)*', redirect: '/' }
 ]
 
