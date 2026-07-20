@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from fastapi import APIRouter, HTTPException
 from app.schemas import SessionResponse, TelegramOidcCallback
 from app.services.session import create_session_token
-from app.services.supabase_client import supabase
+from app.services import supabase_client
 from app.services.telegram_oidc import exchange_code_for_tokens, verify_id_token
 from app.services.telegram_auth import verify_webapp_init_data
 
@@ -26,8 +26,8 @@ async def telegram_callback(payload: TelegramOidcCallback):
         photo_url = claims.get("picture")
         phone_number = claims.get("phone_number")
 
-        existing = (
-            supabase.table("producers").select("*").eq("telegram_id", telegram_id).execute()
+        existing = await (
+            supabase_client.supabase.table("producers").select("*").eq("telegram_id", telegram_id).execute()
         )
 
         profile_fields = {
@@ -40,10 +40,10 @@ async def telegram_callback(payload: TelegramOidcCallback):
 
         if existing.data:
             user = existing.data[0]
-            supabase.table("producers").update(profile_fields).eq("id", user["id"]).execute()
+            await supabase_client.supabase.table("producers").update(profile_fields).eq("id", user["id"]).execute()
         else:
-            insert_result = (
-                supabase.table("producers")
+            insert_result = await (
+                supabase_client.supabase.table("producers")
                 .insert({"telegram_id": telegram_id, **profile_fields})
                 .execute()
             )
@@ -87,8 +87,8 @@ async def webapp_login(payload: WebAppLoginRequest):
 
     # 3. Simpan atau update ke database Supabase
     try:
-        existing = (
-            supabase.table("producers").select("*").eq("telegram_id", telegram_id).execute()
+        existing = await (
+            supabase_client.supabase.table("producers").select("*").eq("telegram_id", telegram_id).execute()
         )
 
         profile_fields = {
@@ -100,10 +100,10 @@ async def webapp_login(payload: WebAppLoginRequest):
 
         if existing.data:
             user = existing.data[0]
-            supabase.table("producers").update(profile_fields).eq("id", user["id"]).execute()
+            await supabase_client.supabase.table("producers").update(profile_fields).eq("id", user["id"]).execute()
         else:
-            insert_result = (
-                supabase.table("producers")
+            insert_result = await (
+                supabase_client.supabase.table("producers")
                 .insert({"telegram_id": telegram_id, **profile_fields})
                 .execute()
             )
