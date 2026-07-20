@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Header, HTTPException
 
 from app.services.session import decode_session_token
-from app.services.supabase_client import supabase
+from app.services import supabase_client
 
 router = APIRouter()
 
@@ -22,7 +22,7 @@ async def get_current_user(authorization: str | None = Header(default=None)) -> 
 
 @router.get("/profile/me")
 async def get_my_profile(current_user: dict = Depends(get_current_user)):
-    result = supabase.table("producers").select("*").eq("id", current_user["sub"]).execute()
+    result = await supabase_client.supabase.table("producers").select("*").eq("id", current_user["sub"]).execute()
     if not result.data:
         raise HTTPException(status_code=404, detail="Profile not found")
 
