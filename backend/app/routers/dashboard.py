@@ -1,29 +1,37 @@
+import asyncio
+
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.routers.protected import get_current_user
 from app.services.missions import get_or_create_today_missions
-from app.services.supabase_client import supabase
+from app.services import supabase_client
 
 router = APIRouter()
 
 
 @router.get("/dashboard/summary")
 async def dashboard_summary(current_user: dict = Depends(get_current_user)):
-    producer_result = supabase.table("producers").select("*").eq("id", current_user["sub"]).execute()
+    producer_id = current_user["sub"]
+
+    # 4 query independen -> dijalankan paralel lewat asyncio.gather,
+    # bukan menunggu satu-satu secara berurutan.
+    producer_result, config_result, top_idols_result, missions = await asyncio.gather(
+        supabase_client.supabase.table("producers").select("*").eq("id", producer_id).execute(),
+        supabase_client.supabase.table("app_config").select("*").eq("id", 1).execute(),
+        supabase_client.supabase.table("idols").select("*").order("votes", desc=True).limit(3).execute(),
+        get_or_create_today_missions(producer_id),
+    )
+
     if not producer_result.data:
         raise HTTPException(status_code=404, detail="Producer not found")
     producer = producer_result.data[0]
 
-    config = supabase.table("app_config").select("*").eq("id", 1).execute().data
-    config = config[0] if config else {}
+    config = config_result.data[0] if config_result.data else {}
 
-    top_idols = supabase.table("idols").select("*").order("votes", desc=True).limit(3).execute().data
     featured_idols = [
         {"id": idol["id"], "name": idol["name"], "photo": idol["photo_url"], "rank": index}
-        for index, idol in enumerate(top_idols, start=1)
+        for index, idol in enumerate(top_idols_result.data, start=1)
     ]
-
-    missions = await get_or_create_today_missions(producer["id"])
 
     return {
         "profile": {
