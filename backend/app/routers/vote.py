@@ -56,7 +56,7 @@ async def vote_summary(current_user: dict = Depends(get_current_user)):
         }
         # Spotlight (rank #1) sudah ditampilkan terpisah di atas, jadi
         # nggak perlu diduplikasi di list ringkas.
-        for idol in idols[1:] if len(idols) > 1 else []
+        for idol in (idols[1:] if len(idols) > 1 else [])
     ]
 
     return {
