@@ -1,7 +1,9 @@
+import asyncio
+
 from fastapi import APIRouter, Depends
 
 from app.routers.protected import get_current_user
-from app.services.supabase_client import supabase
+from app.services import supabase_client
 
 router = APIRouter()
 
@@ -16,7 +18,11 @@ def _format_votes(n: int) -> str:
 
 @router.get("/leaderboard")
 async def get_leaderboard(current_user: dict = Depends(get_current_user)):
-    idols = supabase.table("idols").select("*").order("votes", desc=True).execute().data
+    idols_result, config_result = await asyncio.gather(
+        supabase_client.supabase.table("idols").select("*").order("votes", desc=True).execute(),
+        supabase_client.supabase.table("app_config").select("*").eq("id", 1).execute(),
+    )
+    idols = idols_result.data
 
     ranking = []
     for index, idol in enumerate(idols, start=1):
@@ -36,8 +42,7 @@ async def get_leaderboard(current_user: dict = Depends(get_current_user)):
             }
         )
 
-    config = supabase.table("app_config").select("*").eq("id", 1).execute().data
-    config = config[0] if config else {}
+    config = config_result.data[0] if config_result.data else {}
 
     return {
         "ranking": ranking,
