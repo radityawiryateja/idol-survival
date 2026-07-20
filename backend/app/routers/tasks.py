@@ -1,23 +1,29 @@
+import asyncio
+
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.routers.protected import get_current_user
 from app.services.missions import get_or_create_today_missions
-from app.services.supabase_client import supabase
+from app.services import supabase_client
 
 router = APIRouter()
 
 
 @router.get("/tasks/summary")
 async def tasks_summary(current_user: dict = Depends(get_current_user)):
-    producer_result = supabase.table("producers").select("*").eq("id", current_user["sub"]).execute()
+    producer_id = current_user["sub"]
+
+    producer_result, config_result, daily_missions = await asyncio.gather(
+        supabase_client.supabase.table("producers").select("*").eq("id", producer_id).execute(),
+        supabase_client.supabase.table("app_config").select("*").eq("id", 1).execute(),
+        get_or_create_today_missions(producer_id),
+    )
+
     if not producer_result.data:
         raise HTTPException(status_code=404, detail="Producer not found")
     producer = producer_result.data[0]
 
-    config = supabase.table("app_config").select("*").eq("id", 1).execute().data
-    config = config[0] if config else {}
-
-    daily_missions = await get_or_create_today_missions(producer["id"])
+    config = config_result.data[0] if config_result.data else {}
 
     return {
         "rings": {
@@ -37,7 +43,7 @@ async def tasks_summary(current_user: dict = Depends(get_current_user)):
 
 @router.post("/tasks/{mission_id}/claim")
 async def claim_mission(mission_id: str, current_user: dict = Depends(get_current_user)):
-    record_result = supabase.table("producer_missions").select("*").eq("id", mission_id).execute()
+    record_result = await supabase_client.supabase.table("producer_missions").select("*").eq("id", mission_id).execute()
     if not record_result.data:
         raise HTTPException(status_code=404, detail="Mission not found")
     record = record_result.data[0]
@@ -50,15 +56,15 @@ async def claim_mission(mission_id: str, current_user: dict = Depends(get_curren
         raise HTTPException(status_code=400, detail="Mission belum selesai, belum bisa diklaim")
 
     template = (
-        supabase.table("mission_templates").select("*").eq("id", record["mission_template_id"]).execute().data[0]
-    )
+        await supabase_client.supabase.table("mission_templates").select("*").eq("id", record["mission_template_id"]).execute()
+    ).data[0]
 
-    supabase.table("producer_missions").update({"status": "claimed"}).eq("id", mission_id).execute()
+    await supabase_client.supabase.table("producer_missions").update({"status": "claimed"}).eq("id", mission_id).execute()
 
     current_diamonds = (
-        supabase.table("producers").select("diamonds").eq("id", current_user["sub"]).execute().data[0]["diamonds"]
-    )
-    supabase.table("producers").update({"diamonds": current_diamonds + template["reward_amount"]}).eq(
+        await supabase_client.supabase.table("producers").select("diamonds").eq("id", current_user["sub"]).execute()
+    ).data[0]["diamonds"]
+    await supabase_client.supabase.table("producers").update({"diamonds": current_diamonds + template["reward_amount"]}).eq(
         "id", current_user["sub"]
     ).execute()
 
@@ -71,7 +77,7 @@ async def claim_mission(mission_id: str, current_user: dict = Depends(get_curren
 
 @router.post("/tasks/{mission_id}/share")
 async def share_mission(mission_id: str, current_user: dict = Depends(get_current_user)):
-    record_result = supabase.table("producer_missions").select("*").eq("id", mission_id).execute()
+    record_result = await supabase_client.supabase.table("producer_missions").select("*").eq("id", mission_id).execute()
     if not record_result.data:
         raise HTTPException(status_code=404, detail="Mission not found")
     record = record_result.data[0]
@@ -82,12 +88,12 @@ async def share_mission(mission_id: str, current_user: dict = Depends(get_curren
         raise HTTPException(status_code=400, detail="Mission sudah pernah diklaim")
 
     template = (
-        supabase.table("mission_templates").select("*").eq("id", record["mission_template_id"]).execute().data[0]
-    )
+        await supabase_client.supabase.table("mission_templates").select("*").eq("id", record["mission_template_id"]).execute()
+    ).data[0]
     if template["validation_type"] != "manual":
         raise HTTPException(status_code=400, detail="Mission ini terlacak otomatis, tidak perlu di-share manual")
 
-    supabase.table("producer_missions").update(
+    await supabase_client.supabase.table("producer_missions").update(
         {"progress_count": template["target_count"], "status": "ready"}
     ).eq("id", mission_id).execute()
 
