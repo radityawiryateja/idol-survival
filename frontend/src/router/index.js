@@ -11,6 +11,7 @@ import IdCardPage from '../components/IdCardPage.vue'
 import RewardsPage from '../components/RewardsPage.vue'
 import ShopPage from '../components/ShopPage.vue'
 import TalksPage from '../components/TalksPage.vue'
+import EventsPage from '../components/EventsPage.vue'
 
 const routes = [
   { path: '/login', name: 'login', component: LoginPage },
@@ -24,6 +25,7 @@ const routes = [
   { path: '/rewards', name: 'rewards', component: RewardsPage },
   { path: '/shop', name: 'shop', component: ShopPage },
   { path: '/talk', name: 'talk', component: TalksPage },
+  { path: '/events', name: 'events', component: EventsPage },
   { path: '/:pathMatch(.*)*', redirect: '/' }
 ]
 
