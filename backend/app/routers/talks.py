@@ -1,4 +1,5 @@
 import asyncio
+import logging
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -7,7 +8,21 @@ from app.bot import forward_reply_to_idol
 from app.routers.protected import get_current_user
 from app.services import supabase_client
 
+logger = logging.getLogger("idol_survival.talks")
+
 router = APIRouter()
+
+_MEDIA_PREVIEW_LABELS = {
+    "photo": "📷 Photo",
+    "video": "🎬 Video",
+    "video_note": "⭕ Live Motion",
+    "voice": "🎙️ Voice Message",
+    "audio": "🎵 Audio",
+}
+
+
+def _preview_label(media_type: str) -> str:
+    return _MEDIA_PREVIEW_LABELS.get(media_type, "📎 Media")
 
 
 @router.get("/talks/rooms")
@@ -37,15 +52,18 @@ async def list_talk_rooms(current_user: dict = Depends(get_current_user)):
         candidates.sort(key=lambda m: m["created_at"], reverse=True)
         last_message = candidates[0] if candidates else None
 
+        preview = "Belum ada pesan"
+        if last_message:
+            if last_message["media_type"] != "text":
+                preview = _preview_label(last_message["media_type"])
+            else:
+                preview = last_message["content"]
+
         return {
             "idolId": idol["id"],
             "name": idol["name"],
             "photo": idol["photo_url"],
-            "lastMessagePreview": (
-                "📷 Photo"
-                if last_message and last_message["media_type"] != "text"
-                else (last_message["content"] if last_message else "Belum ada pesan")
-            ),
+            "lastMessagePreview": preview,
             "lastMessageAt": last_message["created_at"] if last_message else None,
         }
 
@@ -138,8 +156,8 @@ async def send_talk_message(
                 await supabase_client.supabase.table("idol_private_messages").update(
                     {"telegram_message_id": telegram_message_id}
                 ).eq("id", inserted["id"]).execute()
-        except Exception as exc:
+        except Exception:
             # Pesan tetap tersimpan di DB meski forward ke Telegram gagal
-            print(f"Failed to forward message to Telegram: {exc}")
+            logger.warning("Failed to forward message to Telegram for idol %s", idol_id, exc_info=True)
 
     return {"status": "ok", "messageId": inserted["id"]}

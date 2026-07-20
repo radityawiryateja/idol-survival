@@ -1,4 +1,6 @@
 import json
+import logging
+
 from pydantic import BaseModel
 from fastapi import APIRouter, HTTPException
 from app.schemas import SessionResponse, TelegramOidcCallback
@@ -6,6 +8,8 @@ from app.services.session import create_session_token
 from app.services import supabase_client
 from app.services.telegram_oidc import exchange_code_for_tokens, verify_id_token
 from app.services.telegram_auth import verify_webapp_init_data
+
+logger = logging.getLogger("idol_survival.auth")
 
 router = APIRouter()
 
@@ -17,7 +21,6 @@ async def telegram_callback(payload: TelegramOidcCallback):
     except Exception as exc:
         raise HTTPException(status_code=401, detail=f"Telegram login failed: {exc}")
 
-    # --- TAMBAHKAN TRY...EXCEPT DI SINI ---
     try:
         telegram_id = claims["id"]
         first_name = claims.get("given_name") or claims.get("name", "Producer")
@@ -51,10 +54,9 @@ async def telegram_callback(payload: TelegramOidcCallback):
 
         session_token = create_session_token(user_id=str(user["id"]), telegram_id=telegram_id)
         return SessionResponse(session_token=session_token, user=user)
-    
+
     except Exception as exc:
-        # Ini akan menangkap error Supabase/Token dan menampilkannya ke frontend!
-        print(f"CRASH DETAIL: {str(exc)}")
+        logger.error("telegram_callback failed: %s", exc)
         raise HTTPException(status_code=400, detail=f"Backend Error: {str(exc)}")
 
 @router.post("/logout")
@@ -72,11 +74,11 @@ async def webapp_login(payload: WebAppLoginRequest):
     parsed_data = verify_webapp_init_data(payload.init_data)
     if not parsed_data:
         raise HTTPException(status_code=401, detail="Invalid Telegram Web App data")
-    
+
     user_str = parsed_data.get("user")
     if not user_str:
         raise HTTPException(status_code=400, detail="No user data found")
-        
+
     # 2. Ambil data dari payload JSON
     tg_user = json.loads(user_str)
     telegram_id = tg_user.get("id")
@@ -112,7 +114,7 @@ async def webapp_login(payload: WebAppLoginRequest):
         # 4. Buat session token
         session_token = create_session_token(user_id=str(user["id"]), telegram_id=telegram_id)
         return SessionResponse(session_token=session_token, user=user)
-    
+
     except Exception as exc:
-        print(f"CRASH DETAIL: {str(exc)}")
+        logger.error("webapp_login failed: %s", exc)
         raise HTTPException(status_code=400, detail=f"Backend Error: {str(exc)}")
