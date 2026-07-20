@@ -9,11 +9,26 @@ from aiogram.types import Message
 from app.config import settings
 from app.services import supabase_client
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+# aiogram's default logging is very chatty (it logs every single polling
+# update at INFO level). We keep third-party loggers at WARNING and only
+# raise our own logger to INFO for the handful of lifecycle events we
+# actually care about, so the console stays readable in production.
+logging.basicConfig(level=logging.WARNING)
+logger = logging.getLogger("idol_survival.bot")
+logger.setLevel(logging.INFO)
 
 bot = Bot(token=settings.TELEGRAM_BOT_TOKEN)
 dp = Dispatcher()
+
+# Maps a Telegram message media kind to the media_type value stored in
+# idol_broadcasts / used by the frontend to pick the right player.
+_MEDIA_TYPES = {
+    "photo": "photo",
+    "video": "video",
+    "video_note": "video_note",  # round "live motion" video message
+    "voice": "voice",
+    "audio": "audio",
+}
 
 
 @dp.message(CommandStart())
@@ -79,19 +94,27 @@ async def handle_idol_private_reply(message: Message):
     ).execute()
 
 
-async def _upload_photo_to_storage(file_id: str) -> str:
+async def _upload_to_storage(file_id: str, folder: str, extension: str, content_type: str) -> str:
     file = await bot.get_file(file_id)
     file_bytes_io = await bot.download_file(file.file_path)
     file_bytes = file_bytes_io.read()
 
-    path = f"broadcasts/{uuid.uuid4()}.jpg"
+    path = f"{folder}/{uuid.uuid4()}.{extension}"
     await supabase_client.supabase.storage.from_("idol-media").upload(
-        path, file_bytes, {"content-type": "image/jpeg"}
+        path, file_bytes, {"content-type": content_type}
     )
-    
-    public_url = await supabase_client.supabase.storage.from_("idol-media").get_public_url(path)
-    
-    return public_url
+    return await supabase_client.supabase.storage.from_("idol-media").get_public_url(path)
+
+
+async def _insert_broadcast(idol_id: str, content: str | None, media_url: str | None, media_type: str) -> None:
+    await supabase_client.supabase.table("idol_broadcasts").insert(
+        {
+            "idol_id": idol_id,
+            "content": content,
+            "media_url": media_url,
+            "media_type": media_type,
+        }
+    ).execute()
 
 
 @dp.message(F.chat.type.in_({"private", "group", "supergroup"}))
@@ -100,29 +123,43 @@ async def handle_idol_broadcast(message: Message):
     if not idol:
         return
 
-    if message.photo:
-        photo = message.photo[-1]
-        try:
-            media_url = await _upload_photo_to_storage(photo.file_id)
-        except Exception as exc:
-            logger.error(f"Failed to upload broadcast photo: {exc}")
+    try:
+        if message.photo:
+            photo = message.photo[-1]
+            media_url = await _upload_to_storage(photo.file_id, "broadcasts", "jpg", "image/jpeg")
+            await _insert_broadcast(idol["id"], message.caption, media_url, _MEDIA_TYPES["photo"])
             return
 
-        await supabase_client.supabase.table("idol_broadcasts").insert(
-            {
-                "idol_id": idol["id"],
-                "content": message.caption,
-                "media_url": media_url,
-                "media_type": "photo",
-            }
-        ).execute()
-        return
+        if message.video:
+            media_url = await _upload_to_storage(message.video.file_id, "broadcasts", "mp4", "video/mp4")
+            await _insert_broadcast(idol["id"], message.caption, media_url, _MEDIA_TYPES["video"])
+            return
 
-    if message.text:
-        await supabase_client.supabase.table("idol_broadcasts").insert(
-            {"idol_id": idol["id"], "content": message.text, "media_type": "text"}
-        ).execute()
-        
+        if message.video_note:
+            # Telegram's round self-recorded video — the closest match to a
+            # "Live Photo" / motion photo. No caption support on these.
+            media_url = await _upload_to_storage(message.video_note.file_id, "broadcasts", "mp4", "video/mp4")
+            await _insert_broadcast(idol["id"], None, media_url, _MEDIA_TYPES["video_note"])
+            return
+
+        if message.voice:
+            media_url = await _upload_to_storage(message.voice.file_id, "broadcasts", "ogg", "audio/ogg")
+            await _insert_broadcast(idol["id"], message.caption, media_url, _MEDIA_TYPES["voice"])
+            return
+
+        if message.audio:
+            media_url = await _upload_to_storage(message.audio.file_id, "broadcasts", "mp3", "audio/mpeg")
+            title = message.caption or message.audio.title
+            await _insert_broadcast(idol["id"], title, media_url, _MEDIA_TYPES["audio"])
+            return
+
+        if message.text:
+            await _insert_broadcast(idol["id"], message.text, None, "text")
+    except Exception:
+        # A failed upload shouldn't crash the bot's polling loop — log once,
+        # at warning level, and move on.
+        logger.warning("Failed to process broadcast media for idol %s", idol["id"], exc_info=True)
+
 
 async def forward_reply_to_idol(idol_admin_chat_id: int, text: str) -> int | None:
     """Dipanggil dari FastAPI saat user kirim reply, forward ke chat admin idol."""
