@@ -1,30 +1,22 @@
+import asyncio
+
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.routers.protected import get_current_user
-from app.services.supabase_client import supabase
+from app.services import supabase_client
 
 router = APIRouter()
 
 
 @router.get("/rewards")
 async def list_rewards(current_user: dict = Depends(get_current_user)):
-    rewards = (
-        supabase.table("rewards")
-        .select("*")
-        .eq("active", True)
-        .order("sort_order")
-        .execute()
-        .data
+    rewards_result, producer_result = await asyncio.gather(
+        supabase_client.supabase.table("rewards").select("*").eq("active", True).order("sort_order").execute(),
+        supabase_client.supabase.table("producers").select("diamonds").eq("id", current_user["sub"]).execute(),
     )
 
-    producer = (
-        supabase.table("producers")
-        .select("diamonds")
-        .eq("id", current_user["sub"])
-        .execute()
-        .data
-    )
-    diamonds = producer[0]["diamonds"] if producer else 0
+    rewards = rewards_result.data
+    diamonds = producer_result.data[0]["diamonds"] if producer_result.data else 0
 
     return {
         "diamonds": diamonds,
@@ -47,7 +39,7 @@ async def list_rewards(current_user: dict = Depends(get_current_user)):
 @router.post("/rewards/{reward_id}/redeem")
 async def redeem_reward(reward_id: str, current_user: dict = Depends(get_current_user)):
     try:
-        result = supabase.rpc(
+        result = await supabase_client.supabase.rpc(
             "redeem_reward_rpc",
             {"p_producer_id": current_user["sub"], "p_reward_id": reward_id},
         ).execute()
