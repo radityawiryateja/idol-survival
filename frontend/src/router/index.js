@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { isAuthenticated } from '../lib/auth'
+import { isAuthenticated, hasRole } from '../lib/auth'
 import LoginPage from '../components/LoginPage.vue'
 import TelegramCallback from '../components/TelegramCallback.vue'
 import DashboardHome from '../components/DashboardHome.vue'
@@ -16,10 +16,18 @@ import VotePage from '../components/VotePage.vue'
 import AccountSettingsPage from '../components/AccountSettingsPage.vue'
 import NotificationSettingsPage from '../components/NotificationSettingsPage.vue'
 import AppearanceSettingsPage from '../components/AppearanceSettingsPage.vue'
+import AvatarInventoryPage from '../components/AvatarInventoryPage.vue'
+import AdminDashboard from '../components/AdminDashboard.vue'
+import IdolDashboard from '../components/IdolDashboard.vue'
+import ForbiddenPage from '../components/ForbiddenPage.vue'
 
 const routes = [
   { path: '/login', name: 'login', component: LoginPage },
   { path: '/auth/telegram/callback', name: 'telegram-callback', component: TelegramCallback },
+  { path: '/forbidden', name: 'forbidden', component: ForbiddenPage },
+
+  // Rute producer biasa (role default). Semua tetap bisa diakses idol/admin
+  // juga, karena mereka tetap punya akun producer di baliknya.
   { path: '/', name: 'dashboard', component: DashboardHome, meta: { requiresAuth: true } },
   { path: '/idols', name: 'idols', component: IdolsList },
   { path: '/leaderboard', name: 'leaderboard', component: Leaderboard },
@@ -31,10 +39,31 @@ const routes = [
   { path: '/talk', name: 'talk', component: TalksPage },
   { path: '/events', name: 'events', component: EventsPage },
   { path: '/vote', name: 'vote', component: VotePage },
+  {
+    path: '/avatars',
+    name: 'avatar-inventory',
+    component: AvatarInventoryPage,
+    meta: { requiresAuth: true },
+  },
   { path: '/settings/account', name: 'settings-account', component: AccountSettingsPage, meta: { requiresAuth: true } },
   { path: '/settings/notifications', name: 'settings-notifications', component: NotificationSettingsPage, meta: { requiresAuth: true } },
   { path: '/settings/appearance', name: 'settings-appearance', component: AppearanceSettingsPage, meta: { requiresAuth: true } },
-  { path: '/:pathMatch(.*)*', redirect: '/' }
+
+  // Rute khusus role. `meta.roles` = daftar role yang boleh masuk.
+  {
+    path: '/admin',
+    name: 'admin-dashboard',
+    component: AdminDashboard,
+    meta: { requiresAuth: true, roles: ['admin'] },
+  },
+  {
+    path: '/idol-panel',
+    name: 'idol-panel',
+    component: IdolDashboard,
+    meta: { requiresAuth: true, roles: ['idol'] },
+  },
+
+  { path: '/:pathMatch(.*)*', redirect: '/' },
 ]
 
 const router = createRouter({
@@ -48,6 +77,12 @@ router.beforeEach((to) => {
   }
   if (to.name === 'login' && isAuthenticated()) {
     return { name: 'dashboard' }
+  }
+
+  // Proteksi per-role: kalau rute punya `meta.roles` dan role user saat
+  // ini tidak termasuk, tolak akses sebelum komponen sempat di-render.
+  if (to.meta.roles && !hasRole(...to.meta.roles)) {
+    return { name: 'forbidden' }
   }
 })
 
