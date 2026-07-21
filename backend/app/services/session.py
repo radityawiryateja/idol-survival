@@ -9,11 +9,15 @@ from app.config import settings
 ALGORITHM = "HS256"
 
 
-def create_session_token(user_id: str, telegram_id: int) -> str:
+def create_session_token(user_id: str, telegram_id: int, role: str = "producer") -> str:
     now = datetime.datetime.utcnow()
     payload = {
         "sub": user_id,
         "telegram_id": telegram_id,
+        # Klaim role dipakai oleh app/services/rbac.py untuk proteksi rute
+        # per-role (producer / idol / admin). Default 'producer' supaya
+        # token lama (yang di-decode ulang tanpa klaim ini) tetap jalan.
+        "role": role,
         "iat": now,
         "exp": now + datetime.timedelta(minutes=settings.SESSION_EXPIRE_MINUTES),
     }
