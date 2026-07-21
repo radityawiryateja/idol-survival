@@ -70,13 +70,15 @@ class ShopItemPayload(BaseModel):
     description: str = ""
     icon: str = "shopping_bag"
     color: str = "primary"
-    category: str  # 'tickets' | 'boosts' | 'cosmetics' | 'avatar'
+    category: str
     cost_diamonds: int
-    stock: Optional[int] = None  # null = unlimited
-    asset_url: Optional[str] = None  # wajib diisi kalau category == 'avatar'
+    stock: Optional[int] = None
+    asset_url: Optional[str] = None
+    frame_style: str = "none"          # BARU
+    frame_asset_url: Optional[str] = None  # BARU (opsional, png/gif border custom)
+    rarity: str = "common"             # BARU
     sort_order: int = 0
     active: bool = True
-
 
 class ShopItemUpdatePayload(BaseModel):
     title: Optional[str] = None
@@ -87,11 +89,15 @@ class ShopItemUpdatePayload(BaseModel):
     cost_diamonds: Optional[int] = None
     stock: Optional[int] = None
     asset_url: Optional[str] = None
+    frame_style: Optional[str] = None
+    frame_asset_url: Optional[str] = None
+    rarity: Optional[str] = None
     sort_order: Optional[int] = None
     active: Optional[bool] = None
 
 
-VALID_CATEGORIES = {"tickets", "boosts", "cosmetics", "avatar"}
+VALID_CATEGORIES = {"tickets", "boosts", "cosmetics", "avatar", "frame"}
+FRAME_STYLES = {"none", "bronze_shine", "silver_pulse", "gold_glow", "epic_rotate", "legendary_particles"}
 
 
 @router.get("/admin/shop-items")
@@ -108,6 +114,8 @@ async def create_shop_item(payload: ShopItemPayload, current_user: dict = Depend
         raise HTTPException(status_code=400, detail="Kategori tidak valid")
     if payload.category == "avatar" and not payload.asset_url:
         raise HTTPException(status_code=400, detail="Item avatar wajib punya asset_url (URL gambar)")
+    if payload.category == "frame" and payload.frame_style not in FRAME_STYLES:
+        raise HTTPException(status_code=400, detail="Frame style tidak valid")
 
     inserted = (
         await supabase_client.supabase.table("shop_items").insert(payload.model_dump()).execute()
