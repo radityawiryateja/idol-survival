@@ -6,7 +6,22 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.bot import start_bot, stop_bot
 from app.config import settings
 from app.services.supabase_client import init_supabase
-from app.routers import auth, protected, idols, leaderboard, tasks, dashboard, rewards, shop, talks, events, vote
+from app.routers import (
+    auth,
+    protected,
+    idols,
+    leaderboard,
+    tasks,
+    dashboard,
+    rewards,
+    shop,
+    talks,
+    events,
+    vote,
+    inventory,
+    admin,
+    idol_panel,
+)
 from app.routers import settings as settings_router
 
 
@@ -45,6 +60,9 @@ app.include_router(talks.router, prefix="/api", tags=["talks"])
 app.include_router(events.router, prefix="/api", tags=["events"])
 app.include_router(vote.router, prefix="/api", tags=["vote"])
 app.include_router(settings_router.router, prefix="/api", tags=["settings"])
+app.include_router(inventory.router, prefix="/api", tags=["inventory"])
+app.include_router(admin.router, prefix="/api", tags=["admin"])
+app.include_router(idol_panel.router, prefix="/api", tags=["idol-panel"])
 
 
 @app.get("/")
