@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException
 
 from app.services.session import decode_session_token
 from app.services import supabase_client
+from app.services.frames import get_equipped_frame
 
 router = APIRouter()
 
@@ -27,6 +28,8 @@ async def get_my_profile(current_user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=404, detail="Profile not found")
 
     producer = result.data[0]
+    frame = await get_equipped_frame(current_user["sub"])
+
     return {
         "name": producer["first_name"],
         "tier": producer["tier"],
@@ -39,4 +42,5 @@ async def get_my_profile(current_user: dict = Depends(get_current_user)):
         "diamonds": producer["diamonds"],
         "achievementsUnlocked": len(producer.get("recent_badges") or []),
         "recentBadges": producer.get("recent_badges") or [],
+        "equippedFrame": frame,
     }
