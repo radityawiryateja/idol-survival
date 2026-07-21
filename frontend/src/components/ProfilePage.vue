@@ -5,6 +5,8 @@
       :tier="profile.tier"
       :level="profile.level"
       :avatar-url="profile.avatarUrl"
+      :frame-style="profile.frameStyle"
+      :frame-asset-url="profile.frameAssetUrl"
     />
 
     <main class="content">
@@ -135,7 +137,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import api, { cachedApiGet } from '../lib/api'
-import { clearSession, getRole, getUser } from '../lib/auth'
+import { clearSession, getRole, getUser, getFrame } from '../lib/auth'
 import { cacheClearAll } from '../lib/cache'
 import TopAppBar from './TopAppBar.vue'
 import BottomNav from './BottomNav.vue'
@@ -154,6 +156,8 @@ const profile = ref({
   diamonds: 0,
   achievementsUnlocked: 0,
   recentBadges: [],
+  frameStyle: 'none',
+  frameAssetUrl: ''
 })
 
 const loading = ref(true)
@@ -221,6 +225,12 @@ async function loadProfile() {
     profile.value.avatarUrl = cachedUser.photo_url || ''
   }
   role.value = getRole()
+
+  const cachedFrame = getFrame()
+  if (cachedFrame) {
+    profile.value.frameStyle = cachedFrame.style
+    profile.value.frameAssetUrl = cachedFrame.assetUrl
+  }
 
   loading.value = true
   try {
