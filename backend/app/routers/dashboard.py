@@ -41,7 +41,7 @@ async def dashboard_summary(current_user: dict = Depends(get_current_user)):
             "name": producer["first_name"],
             "tier": producer["tier"],
             "level": producer["level"],
-            "avatarUrl": producer["photo_url"],
+            "avatarUrl": producer.get("equipped_avatar_url") or producer.get("photo_url"),
         },
         "season": {"daysLeft": config.get("days_left", 0)},
         "stats": {
