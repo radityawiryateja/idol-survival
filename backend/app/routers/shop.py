@@ -64,7 +64,8 @@ async def purchase_shop_item(item_id: str, current_user: dict = Depends(get_curr
     # producer_inventory supaya bisa di-equip lewat /inventory/avatars.
     # -----------------------------------------------------------------
     unlocked_avatar = item["category"] == "avatar"
-    if unlocked_avatar:
+    unlocked_frame = item["category"] == "frame"
+    if unlocked_avatar or unlocked_frame:
         await supabase_client.supabase.table("producer_inventory").upsert(
             {"producer_id": current_user["sub"], "item_id": item_id},
             on_conflict="producer_id,item_id",
@@ -76,4 +77,5 @@ async def purchase_shop_item(item_id: str, current_user: dict = Depends(get_curr
         "remainingDiamonds": row["remaining_diamonds"] if row else None,
         "remainingTickets": row["remaining_tickets"] if row else None,
         "unlockedAvatar": unlocked_avatar,
+        "unlockedFrame": unlocked_frame,
     }
