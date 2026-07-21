@@ -39,6 +39,11 @@ async def list_shop_items(current_user: dict = Depends(get_current_user)):
 
 @router.post("/shop/{item_id}/purchase")
 async def purchase_shop_item(item_id: str, current_user: dict = Depends(get_current_user)):
+    item_result = await supabase_client.supabase.table("shop_items").select("*").eq("id", item_id).execute()
+    if not item_result.data:
+        raise HTTPException(status_code=404, detail="Item tidak ditemukan")
+    item = item_result.data[0]
+
     try:
         result = await supabase_client.supabase.rpc(
             "purchase_shop_item_rpc",
@@ -52,9 +57,23 @@ async def purchase_shop_item(item_id: str, current_user: dict = Depends(get_curr
             raise HTTPException(status_code=400, detail="Item ini sudah habis")
         raise HTTPException(status_code=400, detail="Gagal melakukan pembelian")
 
+    # -----------------------------------------------------------------
+    # FIX: sebelumnya item kategori 'avatar' berhasil dibeli (diamond
+    # kepotong) tapi tidak pernah tercatat sebagai kepemilikan di mana
+    # pun, jadi tidak ada cara memakainya. Sekarang dicatat ke
+    # producer_inventory supaya bisa di-equip lewat /inventory/avatars.
+    # -----------------------------------------------------------------
+    unlocked_avatar = item["category"] == "avatar"
+    if unlocked_avatar:
+        await supabase_client.supabase.table("producer_inventory").upsert(
+            {"producer_id": current_user["sub"], "item_id": item_id},
+            on_conflict="producer_id,item_id",
+        ).execute()
+
     row = result.data[0] if result.data else None
     return {
         "status": "ok",
         "remainingDiamonds": row["remaining_diamonds"] if row else None,
         "remainingTickets": row["remaining_tickets"] if row else None,
+        "unlockedAvatar": unlocked_avatar,
     }
