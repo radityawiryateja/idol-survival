@@ -5,6 +5,8 @@
       :tier="profile.tier"
       :level="profile.level"
       :avatar-url="profile.avatarUrl"
+      :frame-style="profile.frameStyle"
+      :frame-asset-url="profile.frameAssetUrl"
     />
 
     <main class="content">
@@ -93,13 +95,20 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import api from '../lib/api'
-import { getUser } from '../lib/auth'
+import { getUser, getFrame } from '../lib/auth'
 import TopAppBar from './TopAppBar.vue'
 import BottomNav from './BottomNav.vue'
 import LoadingSpinner from './LoadingSpinner.vue'
 import VoteModal from './VoteModal.vue'
 
-const profile = ref({ name: 'Producer', tier: 'DIAMOND SUPPORTER', level: 1, avatarUrl: '' })
+const profile = ref({ 
+  name: 'Producer', 
+  tier: 'DIAMOND SUPPORTER', 
+  level: 1, 
+  avatarUrl: '',
+  frameStyle: 'none',
+  frameAssetUrl: ''
+})
 
 const loading = ref(true)
 const voteTickets = ref(0)
@@ -149,6 +158,12 @@ async function loadVoteHub() {
   if (cachedUser) {
     profile.value.name = cachedUser.first_name || 'Producer'
     profile.value.avatarUrl = cachedUser.photo_url || ''
+  }
+
+  const cachedFrame = getFrame()
+  if (cachedFrame) {
+    profile.value.frameStyle = cachedFrame.style
+    profile.value.frameAssetUrl = cachedFrame.assetUrl
   }
 
   loading.value = true
