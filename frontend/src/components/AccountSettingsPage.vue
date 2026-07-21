@@ -17,6 +17,22 @@
           <p class="telegram-handle" v-if="form.telegramUsername">@{{ form.telegramUsername }}</p>
         </section>
 
+        <!-- 🟢 TAMBAHKAN KODE INVENTORY DI SINI 🟢 -->
+        <section class="inventory-section" v-if="myAvatars.length > 0">
+          <h3 class="field-label">MY AVATARS</h3>
+          <div class="avatar-list">
+            <div 
+              v-for="avatar in myAvatars" 
+              :key="avatar.id"
+              class="avatar-item" 
+              @click="equipAvatar(avatar.id)"
+            >
+              <img :src="avatar.assetUrl" class="avatar-preview" :class="{ 'is-equipped': avatar.equipped }" />
+              <span v-if="avatar.equipped" class="equipped-badge">Dipakai</span>
+            </div>
+          </div>
+        </section>
+
         <label class="field">
           <span class="field-label">DISPLAY NAME</span>
           <input v-model="form.displayName" type="text" maxlength="50" class="field-input" />
@@ -50,6 +66,7 @@ import LoadingSpinner from './LoadingSpinner.vue'
 const loading = ref(true)
 const saving = ref(false)
 const savedMessage = ref('')
+const myAvatars = ref([])
 const form = ref({ displayName: '', bio: '', avatarUrl: '', telegramUsername: '' })
 
 async function loadAccount() {
@@ -78,7 +95,30 @@ async function handleSave() {
   }
 }
 
-onMounted(loadAccount)
+async function loadInventory() {
+  try {
+    const { data } = await api.get('/inventory/avatars')
+    myAvatars.value = data.avatars
+  } catch (err) {
+    console.error('Failed to load inventory', err)
+  }
+}
+
+// Fungsi untuk memakai item
+async function equipAvatar(itemId) {
+  try {
+    await api.post(`/inventory/avatars/${itemId}/equip`)
+    await loadAccount() // Tarik ulang data setelah sukses dipakai
+    alert("Avatar berhasil diganti!")
+  } catch (err) {
+    alert("Gagal mengganti avatar")
+  }
+}
+
+onMounted(() => {
+  loadAccount()
+  loadInventory()
+})
 </script>
 
 <style scoped>
