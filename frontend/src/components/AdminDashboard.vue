@@ -89,8 +89,8 @@
             <select v-model="itemForm.category">
               <option value="tickets">Tickets</option>
               <option value="boosts">Boosts</option>
-              <option value="cosmetics">Cosmetics</option>
               <option value="avatar">Avatar</option>
+              <option value="frame">Frame</option>
             </select>
           </label>
           <label class="field" v-if="itemForm.category === 'avatar'">
@@ -288,10 +288,13 @@ const emptyItemForm = () => ({
   description: '',
   icon: 'shopping_bag',
   color: 'primary',
-  category: 'cosmetics',
+  category: 'frame',      
   cost_diamonds: 0,
   stock: null,
   asset_url: '',
+  frame_style: 'none',
+  frame_asset_url: '',
+  rarity: 'common',
   sort_order: 0,
   active: true,
 })
