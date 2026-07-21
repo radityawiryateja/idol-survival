@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from app.routers.protected import get_current_user
 from app.services.missions import get_or_create_today_missions
 from app.services import supabase_client
+from app.services.frames import get_equipped_frame
 
 router = APIRouter()
 
@@ -33,6 +34,8 @@ async def dashboard_summary(current_user: dict = Depends(get_current_user)):
         for index, idol in enumerate(top_idols_result.data, start=1)
     ]
 
+    frame = await get_equipped_frame(producer_id)
+
     return {
         "profile": {
             "name": producer["first_name"],
@@ -54,4 +57,5 @@ async def dashboard_summary(current_user: dict = Depends(get_current_user)):
         },
         "featuredIdols": featured_idols,
         "missions": missions,
+        "equippedFrame": frame,
     }
