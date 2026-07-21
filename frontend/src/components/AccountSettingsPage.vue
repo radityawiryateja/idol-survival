@@ -123,6 +123,51 @@ onMounted(() => {
 
 <style scoped>
 .settings-page { min-height: 100dvh; background: #0d1226; color: #dce1fc; }
+/* Styling tambahan untuk Inventory Avatar */
+.inventory-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 10px 0;
+}
+.avatar-list {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto; /* Biar bisa di-scroll ke samping kalau avatarnya banyak */
+  padding-bottom: 10px;
+}
+.avatar-item {
+  position: relative;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: transform 0.2s;
+}
+.avatar-item:hover {
+  transform: scale(1.05);
+}
+.avatar-preview {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+}
+.avatar-preview.is-equipped {
+  border-color: #34d399; /* Warna hijau penanda lagi dipakai */
+}
+.equipped-badge {
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #34d399;
+  color: #0d1226;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 8px;
+  white-space: nowrap;
+}
 .top-bar {
   position: fixed; top: 0; left: 0; width: 100%; z-index: 50;
   background: rgba(13, 18, 38, 0.8); backdrop-filter: blur(24px);
