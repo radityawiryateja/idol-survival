@@ -3,7 +3,12 @@
     <div class="bar-inner">
       <div class="user-info">
         <div class="avatar-wrap">
-          <AvatarFrame :avatar-url="avatarUrl" :frame-style="frameStyle" :frame-asset-url="frameAssetUrl" :size="40" />
+          <AvatarFrame
+            :avatar-url="avatarUrl"
+            :frame-style="frameStyle"
+            :frame-asset-url="frameAssetUrl"
+            :size="40"
+          />
           <span class="level-badge">LV.{{ level }}</span>
         </div>
         <div>
@@ -25,14 +30,14 @@
 
 <script setup>
 import AvatarFrame from './AvatarFrame.vue'
-  
+
 defineProps({
   name: { type: String, default: 'Producer' },
   tier: { type: String, default: 'DIAMOND SUPPORTER' },
   level: { type: [String, Number], default: 1 },
   avatarUrl: { type: String, default: '' },
-  frameStyle: { type: String, default: 'none' },     // BARU
-  frameAssetUrl: { type: String, default: '' },      // BARU
+  frameStyle: { type: String, default: 'none' },
+  frameAssetUrl: { type: String, default: '' },
 })
 </script>
 
@@ -64,14 +69,6 @@ defineProps({
 .avatar-wrap {
   position: relative;
 }
-.avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: 1px solid rgba(181, 196, 255, 0.3);
-  object-fit: cover;
-  background: #191f32;
-}
 .level-badge {
   position: absolute;
   bottom: -4px;
@@ -83,6 +80,7 @@ defineProps({
   padding: 0 4px;
   border-radius: 4px;
   border: 1px solid #0d1226;
+  z-index: 5;
 }
 .name {
   font-size: 20px;
