@@ -112,8 +112,8 @@ const categories = [
   { value: 'all', label: 'ALL' },
   { value: 'tickets', label: 'TICKETS' },
   { value: 'boosts', label: 'BOOSTS' },
-  { value: 'cosmetics', label: 'COSMETICS' },
   { value: 'avatar', label: 'AVATARS' },
+  { value: 'frame', label: 'FRAMES' },
 ]
 const activeCategory = ref('all')
 
