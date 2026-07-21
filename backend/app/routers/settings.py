@@ -58,7 +58,7 @@ async def get_account_settings(current_user: dict = Depends(get_current_user)):
         "lastName": producer.get("last_name"),
         "displayName": producer.get("display_name") or producer["first_name"],
         "bio": producer.get("bio") or "",
-        "avatarUrl": producer.get("photo_url"),
+        "avatarUrl": producer.get("equipped_avatar_url") or producer.get("photo_url"),
     }
 
 
