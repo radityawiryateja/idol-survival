@@ -41,7 +41,7 @@ async function handleCallback() {
       code,
       code_verifier: codeVerifier,
     })
-    saveSession(data.session_token, data.user)
+    saveSession(data.session_token, data.user, data.role)
     router.push({ name: 'dashboard' })
   } catch (err) {
     status.value = 'error'

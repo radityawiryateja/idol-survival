@@ -120,7 +120,7 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
-import api from '../lib/api'
+import { cachedApiGet } from '../lib/api'
 import { getUser } from '../lib/auth'
 import BottomNav from './BottomNav.vue'
 import TopAppBar from './TopAppBar.vue'
@@ -159,10 +159,12 @@ const actions = [
   { label: 'Shop', icon: 'shopping_bag', to: '/shop' },
 ]
 
-// Loads live dashboard data from the FastAPI backend. Falls back to the
-// cached user object (from Telegram login) for the header while the
-// request is in flight.
-async function loadDashboardData() {
+// Loads dashboard data via the client-side cache (lib/api.js). Kalau data
+// masih fresh (< 60 detik terakhir, dan belum ada mutasi yang
+// meng-invalidate-nya), request ini tidak menyentuh backend sama sekali —
+// cukup ambil dari cache in-memory. Ini yang bikin pindah tab bottom-nav
+// bolak-balik ke Home tidak nembak API tiap kali.
+async function loadDashboardData({ force = false } = {}) {
   const cachedUser = getUser()
   if (cachedUser) {
     profile.value.name = cachedUser.first_name || 'Producer'
@@ -171,7 +173,7 @@ async function loadDashboardData() {
 
   loading.value = true
   try {
-    const { data } = await api.get('/dashboard/summary')
+    const data = await cachedApiGet('/dashboard/summary', { ttl: 60 * 1000, force })
     profile.value = { ...profile.value, ...data.profile }
     season.value = data.season
     stats.value = data.stats
@@ -185,7 +187,7 @@ async function loadDashboardData() {
   }
 }
 
-onMounted(loadDashboardData)
+onMounted(() => loadDashboardData())
 </script>
 
 <style scoped>

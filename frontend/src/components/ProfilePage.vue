@@ -74,6 +74,18 @@
           </div>
         </section>
 
+        <!-- Role-specific shortcut (hanya muncul untuk role terkait) -->
+        <router-link v-if="role === 'admin'" to="/admin" class="role-banner admin">
+          <span class="material-symbols-outlined">admin_panel_settings</span>
+          <span>Buka Admin Panel</span>
+          <span class="material-symbols-outlined chevron">chevron_right</span>
+        </router-link>
+        <router-link v-else-if="role === 'idol'" to="/idol-panel" class="role-banner idol">
+          <span class="material-symbols-outlined">stars</span>
+          <span>Buka Idol Panel</span>
+          <span class="material-symbols-outlined chevron">chevron_right</span>
+        </router-link>
+
         <!-- Settings list -->
         <section class="settings-section">
           <h2>ACCOUNT PREFERENCES</h2>
@@ -122,8 +134,9 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import api from '../lib/api'
-import { clearSession, getUser } from '../lib/auth'
+import api, { cachedApiGet } from '../lib/api'
+import { clearSession, getRole, getUser } from '../lib/auth'
+import { cacheClearAll } from '../lib/cache'
 import TopAppBar from './TopAppBar.vue'
 import BottomNav from './BottomNav.vue'
 import LoadingSpinner from './LoadingSpinner.vue'
@@ -145,8 +158,16 @@ const profile = ref({
 
 const loading = ref(true)
 const buildVersion = ref('4.8.2-PRO')
+const role = ref(getRole())
 
 const settingsItems = [
+  {
+    title: 'My Avatars',
+    subtitle: 'Pakai avatar limited hasil beli di Shop',
+    icon: 'face',
+    color: 'primary',
+    route: '/avatars',
+  },
   {
     title: 'Account Settings',
     subtitle: 'Email, Password, Security',
@@ -188,6 +209,7 @@ async function handleLogout() {
     console.error('Logout request failed, clearing session locally anyway', err)
   } finally {
     clearSession()
+    cacheClearAll() // jangan sampai data producer sebelumnya bocor ke akun berikutnya
     router.push({ name: 'login' })
   }
 }
@@ -198,10 +220,11 @@ async function loadProfile() {
     profile.value.name = cachedUser.first_name || 'Producer'
     profile.value.avatarUrl = cachedUser.photo_url || ''
   }
+  role.value = getRole()
 
   loading.value = true
   try {
-    const { data } = await api.get('/profile/me')
+    const data = await cachedApiGet('/profile/me', { ttl: 60 * 1000 })
     profile.value = { ...profile.value, ...data }
   } catch (err) {
     console.error('Failed to load profile', err)
@@ -408,6 +431,29 @@ onMounted(loadProfile)
 .badge-primary { color: #b5c4ff; }
 .badge-secondary { color: #c5c0ff; }
 .badge-tertiary { color: #b8c4ff; }
+
+/* Role shortcut banner */
+.role-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 700;
+}
+.role-banner .chevron { margin-left: auto; }
+.role-banner.admin {
+  background: rgba(255, 180, 171, 0.1);
+  border: 1px solid rgba(255, 180, 171, 0.3);
+  color: #ffb4ab;
+}
+.role-banner.idol {
+  background: rgba(181, 196, 255, 0.1);
+  border: 1px solid rgba(181, 196, 255, 0.3);
+  color: #b5c4ff;
+}
 
 /* Settings */
 .settings-section {

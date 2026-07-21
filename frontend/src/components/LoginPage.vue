@@ -72,7 +72,7 @@ onMounted(async () => {
         init_data: tg.initData
       })
       
-      saveSession(data.session_token, data.user)
+      saveSession(data.session_token, data.user, data.role)
       router.push({ name: 'dashboard' })
     } catch (err) {
       console.error(err)

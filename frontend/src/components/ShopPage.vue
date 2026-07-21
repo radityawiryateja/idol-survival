@@ -37,6 +37,11 @@
           </button>
         </section>
 
+        <p v-if="justUnlockedAvatar" class="avatar-unlocked-banner">
+          <span class="material-symbols-outlined">face</span>
+          Avatar baru terkunci! <router-link to="/avatars">Pakai sekarang →</router-link>
+        </p>
+
         <section class="shop-grid">
           <div v-for="item in filteredItems" :key="item.id" class="shop-card">
             <div class="shop-icon" :class="`icon-${item.color}`">
@@ -78,7 +83,7 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
-import api from '../lib/api'
+import api, { cachedApiGet, invalidate } from '../lib/api'
 import { getUser } from '../lib/auth'
 import TopAppBar from './TopAppBar.vue'
 import BottomNav from './BottomNav.vue'
@@ -92,12 +97,14 @@ const items = ref([])
 const loading = ref(true)
 const purchasingId = ref(null)
 const justBoughtId = ref(null)
+const justUnlockedAvatar = ref(false)
 
 const categories = [
   { value: 'all', label: 'ALL' },
   { value: 'tickets', label: 'TICKETS' },
   { value: 'boosts', label: 'BOOSTS' },
   { value: 'cosmetics', label: 'COSMETICS' },
+  { value: 'avatar', label: 'AVATARS' },
 ]
 const activeCategory = ref('all')
 
@@ -110,11 +117,28 @@ const filteredItems = computed(() =>
 async function handlePurchase(item) {
   if (purchasingId.value) return
   purchasingId.value = item.id
+  justUnlockedAvatar.value = false
   try {
     const { data } = await api.post(`/shop/${item.id}/purchase`)
     diamonds.value = data.remainingDiamonds
     voteTickets.value = data.remainingTickets
     justBoughtId.value = item.id
+
+    // FIX: sebelumnya item kategori avatar bisa dibeli tapi tidak pernah
+    // bisa dipakai di mana pun. Sekarang backend mencatat kepemilikannya
+    // (producer_inventory) dan di sini kita arahkan user ke halaman
+    // /avatars untuk langsung memakainya.
+    if (data.unlockedAvatar) {
+      justUnlockedAvatar.value = true
+      invalidate('/inventory/avatars')
+    }
+
+    // Saldo diamond/tiket berubah -> semua halaman yang menampilkannya
+    // perlu ambil data baru, bukan dari cache lama.
+    invalidate('/dashboard/summary')
+    invalidate('/profile/me')
+    invalidate('/vote/summary')
+
     setTimeout(() => {
       if (justBoughtId.value === item.id) justBoughtId.value = null
     }, 1500)
@@ -125,7 +149,7 @@ async function handlePurchase(item) {
   }
 }
 
-async function loadShop() {
+async function loadShop({ force = false } = {}) {
   const cachedUser = getUser()
   if (cachedUser) {
     profile.value.name = cachedUser.first_name || 'Producer'
@@ -134,7 +158,7 @@ async function loadShop() {
 
   loading.value = true
   try {
-    const { data } = await api.get('/shop')
+    const data = await cachedApiGet('/shop', { ttl: 60 * 1000, force })
     diamonds.value = data.diamonds
     voteTickets.value = data.voteTickets
     items.value = data.items
@@ -145,7 +169,7 @@ async function loadShop() {
   }
 }
 
-onMounted(loadShop)
+onMounted(() => loadShop())
 </script>
 
 <style scoped>
@@ -224,6 +248,21 @@ onMounted(loadShop)
   border-color: transparent;
   box-shadow: 0 0 12px rgba(79, 125, 255, 0.3);
 }
+
+.avatar-unlocked-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: rgba(181, 196, 255, 0.1);
+  border: 1px solid rgba(181, 196, 255, 0.3);
+  font-size: 12px;
+  font-weight: 700;
+  color: #b5c4ff;
+}
+.avatar-unlocked-banner a { color: #dce1fc; text-decoration: underline; }
 
 /* Shop cards */
 .shop-grid {
