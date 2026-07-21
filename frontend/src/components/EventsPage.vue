@@ -7,7 +7,9 @@
         :tier="profile.tier"
         :level="profile.level"
         :avatar-url="profile.avatarUrl"
-      />
+        :frame-style="profile.frameStyle"
+        :frame-asset-url="profile.frameAssetUrl"
+        />
 
       <main class="content">
         <section class="page-title">
@@ -157,12 +159,19 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import api from '../lib/api'
-import { getUser } from '../lib/auth'
+import { getUser, getFrame } from '../lib/auth'
 import TopAppBar from './TopAppBar.vue'
 import BottomNav from './BottomNav.vue'
 import LoadingSpinner from './LoadingSpinner.vue'
 
-const profile = ref({ name: 'Producer', tier: 'DIAMOND SUPPORTER', level: 1, avatarUrl: '' })
+const profile = ref({ 
+  name: 'Producer', 
+  tier: 'DIAMOND SUPPORTER', 
+  level: 1, 
+  avatarUrl: '',
+  frameStyle: 'none',
+  frameAssetUrl: ''
+})
 
 const events = ref([])
 const loading = ref(true)
@@ -191,6 +200,13 @@ function overallPercent(event) {
 }
 
 async function loadEvents() {
+
+  const cachedFrame = getFrame()
+  if (cachedFrame) {
+    profile.value.frameStyle = cachedFrame.style
+    profile.value.frameAssetUrl = cachedFrame.assetUrl
+  }
+  
   loading.value = true
   try {
     const { data } = await api.get('/events')
