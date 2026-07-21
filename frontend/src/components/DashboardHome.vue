@@ -5,7 +5,9 @@
       :tier="profile.tier"
       :level="profile.level"
       :avatar-url="profile.avatarUrl"
-    />
+      :frame-style="profile.frameStyle"
+      :frame-asset-url="profile.frameAssetUrl"
+      />
 
     <main class="content">
       <LoadingSpinner v-if="loading" label="Memuat dashboard..." />
@@ -175,6 +177,10 @@ async function loadDashboardData({ force = false } = {}) {
   try {
     const data = await cachedApiGet('/dashboard/summary', { ttl: 60 * 1000, force })
     profile.value = { ...profile.value, ...data.profile }
+      if (data.equippedFrame) {
+        profile.value.frameStyle = data.equippedFrame.style
+        profile.value.frameAssetUrl = data.equippedFrame.assetUrl
+      }
     season.value = data.season
     stats.value = data.stats
     liveBanner.value = data.liveBanner
