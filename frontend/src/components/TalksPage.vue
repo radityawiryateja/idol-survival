@@ -7,7 +7,9 @@
         :tier="profile.tier"
         :level="profile.level"
         :avatar-url="profile.avatarUrl"
-      />
+        :frame-style="profile.frameStyle"
+        :frame-asset-url="profile.frameAssetUrl"
+        />
       <main class="content">
         <section class="page-title">
           <h1>Talks</h1>
@@ -136,14 +138,21 @@
 <script setup>
 import { nextTick, onMounted, onUnmounted, ref } from 'vue'
 import api from '../lib/api'
-import { getUser } from '../lib/auth'
+import { getUser, getFrame } from '../lib/auth'
 import { renderEmojiText } from '../lib/emoji'
 import { supabase } from '../lib/supabase'
 import TopAppBar from './TopAppBar.vue'
 import BottomNav from './BottomNav.vue'
 import LoadingSpinner from './LoadingSpinner.vue'
 
-const profile = ref({ name: 'Producer', tier: 'DIAMOND SUPPORTER', level: 1, avatarUrl: '' })
+const profile = ref({ 
+  name: 'Producer', 
+  tier: 'DIAMOND SUPPORTER', 
+  level: 1, 
+  avatarUrl: '',
+  frameStyle: 'none',
+  frameAssetUrl: ''
+})
 
 const rooms = ref([])
 const loadingRooms = ref(true)
@@ -171,6 +180,13 @@ async function scrollToBottom() {
 }
 
 async function loadRooms() {
+
+  const cachedFrame = getFrame()
+  if (cachedFrame) {
+    profile.value.frameStyle = cachedFrame.style
+    profile.value.frameAssetUrl = cachedFrame.assetUrl
+  }
+  
   loadingRooms.value = true
   try {
     const { data } = await api.get('/talks/rooms')
