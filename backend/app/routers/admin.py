@@ -96,7 +96,7 @@ class ShopItemUpdatePayload(BaseModel):
     active: Optional[bool] = None
 
 
-VALID_CATEGORIES = {"tickets", "boosts", "cosmetics", "avatar", "frame"}
+VALID_CATEGORIES = {"tickets", "boosts", "avatar", "frame"}
 FRAME_STYLES = {"none", "bronze_shine", "silver_pulse", "gold_glow", "epic_rotate", "legendary_particles"}
 
 
