@@ -123,7 +123,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { cachedApiGet } from '../lib/api'
-import { getUser } from '../lib/auth'
+import { getUser, saveFrame, getFrame } from '../lib/auth'
 import BottomNav from './BottomNav.vue'
 import TopAppBar from './TopAppBar.vue'
 import LoadingSpinner from './LoadingSpinner.vue'
@@ -133,6 +133,8 @@ const profile = ref({
   tier: 'DIAMOND SUPPORTER',
   level: 1,
   avatarUrl: '',
+  frameStyle: 'none',
+  frameAssetUrl: '',
 })
 
 const loading = ref(true)
@@ -161,26 +163,31 @@ const actions = [
   { label: 'Shop', icon: 'shopping_bag', to: '/shop' },
 ]
 
-// Loads dashboard data via the client-side cache (lib/api.js). Kalau data
-// masih fresh (< 60 detik terakhir, dan belum ada mutasi yang
-// meng-invalidate-nya), request ini tidak menyentuh backend sama sekali —
-// cukup ambil dari cache in-memory. Ini yang bikin pindah tab bottom-nav
-// bolak-balik ke Home tidak nembak API tiap kali.
 async function loadDashboardData({ force = false } = {}) {
   const cachedUser = getUser()
   if (cachedUser) {
     profile.value.name = cachedUser.first_name || 'Producer'
     profile.value.avatarUrl = cachedUser.photo_url || ''
   }
+  const cachedFrame = getFrame()
+  if (cachedFrame) {
+    profile.value.frameStyle = cachedFrame.style
+    profile.value.frameAssetUrl = cachedFrame.assetUrl
+  }
 
   loading.value = true
   try {
     const data = await cachedApiGet('/dashboard/summary', { ttl: 60 * 1000, force })
     profile.value = { ...profile.value, ...data.profile }
-      if (data.equippedFrame) {
-        profile.value.frameStyle = data.equippedFrame.style
-        profile.value.frameAssetUrl = data.equippedFrame.assetUrl
-      }
+    if (data.equippedFrame) {
+      profile.value.frameStyle = data.equippedFrame.style
+      profile.value.frameAssetUrl = data.equippedFrame.assetUrl
+      saveFrame(data.equippedFrame)
+    } else {
+      profile.value.frameStyle = 'none'
+      profile.value.frameAssetUrl = ''
+      saveFrame(null)
+    }
     season.value = data.season
     stats.value = data.stats
     liveBanner.value = data.liveBanner
