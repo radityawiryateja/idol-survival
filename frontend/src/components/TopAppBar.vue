@@ -3,7 +3,7 @@
     <div class="bar-inner">
       <div class="user-info">
         <div class="avatar-wrap">
-          <img :src="avatarUrl" alt="" class="avatar" />
+          <AvatarFrame :avatar-url="avatarUrl" :frame-style="frameStyle" :frame-asset-url="frameAssetUrl" :size="40" />
           <span class="level-badge">LV.{{ level }}</span>
         </div>
         <div>
@@ -24,11 +24,15 @@
 </template>
 
 <script setup>
+import AvatarFrame from './AvatarFrame.vue'
+  
 defineProps({
   name: { type: String, default: 'Producer' },
   tier: { type: String, default: 'DIAMOND SUPPORTER' },
   level: { type: [String, Number], default: 1 },
   avatarUrl: { type: String, default: '' },
+  frameStyle: { type: String, default: 'none' },     // BARU
+  frameAssetUrl: { type: String, default: '' },      // BARU
 })
 </script>
 
