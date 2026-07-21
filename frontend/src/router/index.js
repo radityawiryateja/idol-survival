@@ -13,6 +13,9 @@ import ShopPage from '../components/ShopPage.vue'
 import TalksPage from '../components/TalksPage.vue'
 import EventsPage from '../components/EventsPage.vue'
 import VotePage from '../components/VotePage.vue'
+import AccountSettingsPage from '../components/AccountSettingsPage.vue'
+import NotificationSettingsPage from '../components/NotificationSettingsPage.vue'
+import AppearanceSettingsPage from '../components/AppearanceSettingsPage.vue'
 
 const routes = [
   { path: '/login', name: 'login', component: LoginPage },
@@ -28,6 +31,9 @@ const routes = [
   { path: '/talk', name: 'talk', component: TalksPage },
   { path: '/events', name: 'events', component: EventsPage },
   { path: '/vote', name: 'vote', component: VotePage },
+  { path: '/settings/account', name: 'settings-account', component: AccountSettingsPage, meta: { requiresAuth: true } },
+  { path: '/settings/notifications', name: 'settings-notifications', component: NotificationSettingsPage, meta: { requiresAuth: true } },
+  { path: '/settings/appearance', name: 'settings-appearance', component: AppearanceSettingsPage, meta: { requiresAuth: true } },
   { path: '/:pathMatch(.*)*', redirect: '/' }
 ]
 
